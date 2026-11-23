@@ -181,7 +181,7 @@ export class ArenaEngine {
     this.burst(tx,ty,beast?COLOR[this.beastForm]:"#ffe08a",beast?12:4,75);this.sound(beast?110:g===5?75:300,beast?.16:.065);
   }
   special(){
-    const p=this.player;if(p.special>0||p.energy<15)return;
+    const p=this.player;if(p.special>0||(p.energy<22&&this.magicCharges<=0))return;
     const beast=p.beastTime>0,enchanted=this.magicCharges>0;
     if(enchanted){this.magicCharges--;this.magicStyle=(this.magicStyle+1)%4}
     p.special=beast?1.3:enchanted?1.7:3.5;p.energy-=enchanted?0:beast?15:22;
