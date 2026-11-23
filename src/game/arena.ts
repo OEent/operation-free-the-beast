@@ -36,6 +36,7 @@ export class ArenaEngine {
   settings:Settings;
   player:Player={x:100,y:410,hp:160,maxHp:160,energy:60,ammo:240,shield:0,beastTime:0,face:1,z:0,vz:0,inv:0,attack:0,attackId:0,attackChain:0,shoot:0,dash:0,special:0,stagger:0};
   cam=0;world=6100;time=0;last=0;acc=0;raf=0;shake=0;score=0;combo=0;comboT=0;kills=0;
+  gait=0;motion=0;queuedSlash=false;hitStop=0;
   enemies:Enemy[]=[];crates:Crate[]=[];targets:RuneTarget[]=[];props:WorldProp[]=[];shots:Shot[]=[];particles:Particle[]=[];drops:Drop[]=[];numbers:TextFX[]=[];
   id=0;wave=0;waveIndex=0;encounterActive=false;checkpoint=0;beastForm:Beast=0;weapon=0;arenaActive=false;arenaClears=0;
   magicCharges=0;magicStyle=0;bombs=0;lastBeast:Beast|null=null;weaponLevels=[1,1,1,1,1,1,1,1];waveTimer=1.8;
@@ -80,7 +81,7 @@ export class ArenaEngine {
     this.state="play";this.player={x:100,y:410,hp:160,maxHp:160,energy:60,ammo:240,shield:0,beastTime:0,face:1,z:0,vz:0,inv:0,attack:0,attackId:0,attackChain:0,shoot:0,dash:0,special:0,stagger:0};
     this.wave=0;this.waveIndex=0;this.encounterActive=false;this.gate=0;this.checkpoint=0;this.stage=0;this.arenaActive=false;this.arenaClears=0;this.bossDefeated=false;this.score=0;this.kills=0;this.combo=0;
     this.magicCharges=0;this.magicStyle=0;this.bombs=0;this.lastBeast=null;
-    this.enemies=[];this.shots=[];this.drops=[];this.particles=[];this.numbers=[];this.seedStage();this.waveTimer=1.1;this.cam=0;this.weapon=0;this.weaponLevels.fill(1);this.tell("CHAPTER I: THE SHATTERED ROAD");this.sound(400,.24);
+    this.enemies=[];this.shots=[];this.drops=[];this.particles=[];this.numbers=[];this.seedStage();this.waveTimer=1.1;this.cam=0;this.weapon=0;this.weaponLevels.fill(1);this.motion=0;this.gait=0;this.queuedSlash=false;this.hitStop=0;this.tell("CHAPTER I: THE SHATTERED ROAD");this.sound(400,.24);
   }
   spawn(kind:EnemyKind,x:number,y:number){
     if(this.enemies.filter(e=>e.alive).length>=6)return;
@@ -136,8 +137,14 @@ export class ArenaEngine {
     }
   }
   attack(){
-    const p=this.player;if(p.attack>0||p.stagger>0)return;
-    p.attack=.32;p.attackId++;p.attackChain=(p.attackChain+1)%3;const beast=p.beastTime>0;
+    const p=this.player;
+    if(p.stagger>0)return;
+    if(p.attack>0){
+      if(p.attack<.20)this.queuedSlash=true;
+      return;
+    }
+    this.queuedSlash=false;
+    p.attack=.37;p.attackId++;p.attackChain=(p.attackChain+1)%3;const beast=p.beastTime>0;
     const range=beast?148:p.attackChain===2?111:93, lane=beast?115:74;
     const dmg=beast?[48,64,86,115][this.beastForm]:p.attackChain===2?30:17;
     let hits=0;
@@ -146,7 +153,10 @@ export class ArenaEngine {
     }
     for(const c of this.crates)if(c.alive&&(c.x-p.x)*p.face>-25&&(c.x-p.x)*p.face<range&&Math.abs(c.y-p.y)<lane) this.hitCrate(c,beast?5:2);
     for(const o of this.props)if(o.alive&&o.kind==="shop"&&(o.x-p.x)*p.face>-55&&(o.x-p.x)*p.face<range+o.w/2&&Math.abs(o.y-p.y)<lane+24)this.hitProp(o,beast?7:3);
-    if(hits>0){this.sound(beast?100:175,.18);this.shake=beast?10:4}else this.sound(300,.07,"triangle");
+    if(hits>0){this.sound(beast?100:175,.18);this.shake=beast?10:4;this.hitStop=beast?.09:.045;
+      this.float(p.x+p.face*75,p.y-89,p.attackChain===2?"FINISHER!":"SLASH!","#98f6ff");
+      for(const e of this.enemies)if(e.alive&&Math.abs(e.x-p.x)<120&&Math.abs(e.y-p.y)<90)e.stun=Math.max(e.stun,beast?.28:.16)
+    }else this.sound(300,.07,"triangle");
     this.burst(p.x+p.face*range*.7,p.y-40,beast?COLOR[this.beastForm]:"#c5f9ff",beast?17:8,90);
   }
   hitCrate(c:Crate,damage:number){
@@ -222,6 +232,8 @@ export class ArenaEngine {
     if(I.pressed("pause")||I.pressed("menu")){this.state=this.state==="pause"?"play":"pause";return}
     if(this.state!=="play")return;
     const p=this.player;
+    if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);return}
+    if(this.queuedSlash&&p.attack<=0){this.attack()}
     if(I.pressed("nextWeapon")){this.weapon=(this.weapon+1)%8;this.tell(GUNS[this.weapon]+" LV"+this.weaponLevels[this.weapon],1.5);this.sound(440,.06,"triangle")}
     // Beast roulette is automatic. Repeated transformations cannot repeat the same form.
     if(I.pressed("nextBeast")&&p.beastTime<=0)this.tell("BEAST ROULETTE — RANDOM ON TRANSFORM!",1.9);
@@ -246,8 +258,17 @@ export class ArenaEngine {
     const speed=p.beastTime>0?[260,225,245,180][this.beastForm]:200;
     const xs=(I.down("right")?1:0)-(I.down("left")?1:0),ys=(I.down("down")?1:0)-(I.down("up")?1:0);
     const len=Math.hypot(xs,ys)||1;let dx=xs/len,dy=ys/len;if(dx)p.face=dx>0?1:-1;
-    if(p.dash>0){dx=p.face*2.8;dy=0}
+    const targetMotion=Math.min(1,Math.hypot(dx,dy));
+    // Smooth acceleration/deceleration of body language, with normalized gait
+    // driven by locomotion rather than a disconnected global animation clock.
+    this.motion+=(targetMotion-this.motion)*Math.min(1,dt*13);
+    if(this.motion>.04)this.gait+=dt*(p.dash>0?23:10+this.motion*5);
+    if(this.motion<.1)this.gait*=1-Math.min(1,dt*2.5);
+    if(p.dash>0){dx=p.face*2.8;dy=0;
+      if(Math.random()<.6)this.particles.push({x:p.x-p.face*20,y:p.y-30-p.z,vx:-p.face*rng(65,180),vy:rng(-12,22),life:.26,max:.26,size:rng(3,8),color:"#52dafa"});
+    }
     if(p.stagger<=0){p.x=clamp(p.x+dx*speed*dt,28,this.world-80);p.y=clamp(p.y+dy*speed*.77*dt,FLOOR_TOP+30,FLOOR_BOTTOM)}
+    if(this.motion>.7&&p.z===0&&Math.random()<.09)this.particles.push({x:p.x-p.face*4,y:p.y-3,vx:-p.face*rng(10,45),vy:-rng(1,25),life:.28,max:.28,size:rng(2,4),color:"#bcaac3"});
     // Jump onto raised roofs, branches or watchtower platforms (one-way surfaces).
     const support=this.props.find(o=>o.alive&&o.climbable&&Math.abs(p.x-o.x)<o.w*.42&&Math.abs(p.y-o.y)<32&&Math.abs(p.z-o.h)<2);
     if(p.vz===0&&p.z>0&&!support)p.vz=-25; // step off and fall
