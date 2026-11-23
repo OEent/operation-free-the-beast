@@ -1,4 +1,4 @@
-import { Engine } from "./engine";
+import { ArenaEngine as Engine } from "./arena";
 import { loadSettings } from "./storage";
 import type { Action } from "./input";
 
@@ -11,6 +11,8 @@ engine.start();
 const mobile = window.matchMedia("(pointer: coarse)").matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
 if (mobile) {
   const buttons: { action: Action; label: string; x: number; y: number; w?: number }[] = [
+    { action: "up", label: "▲", x: 13, y: 54 },
+    { action: "down", label: "▼", x: 13, y: 80 },
     { action: "left", label: "◀", x: 4, y: 68 },
     { action: "right", label: "▶", x: 21, y: 68 },
     { action: "jump", label: "JUMP", x: 68, y: 66 },

@@ -1,4 +1,5 @@
 import { Input } from "./input";
+import { renderArena } from "./arena-art";
 import type { Settings } from "./storage";
 
 // IRONFANG 3.0: original belt-scrolling arcade game. The legacy platform engine
@@ -122,7 +123,7 @@ export class ArenaEngine {
   }
   findTarget():Enemy|undefined{
     const p=this.player;return this.enemies.filter(e=>e.alive&&Math.abs(e.y-p.y)<160&&Math.abs(e.x-p.x)<460)
-    .sort((a,b)=>{const value=(e:Enemy)=>distance(e,p)+(e.x-p.x)*p.face<0?distance(e,p)+30:distance(e,p);return value(a)-value(b)})[0];
+    .sort((a,b)=>{const value=(e:Enemy)=>distance(e,p)+((e.x-p.x)*p.face<0?75:0);return value(a)-value(b)})[0];
   }
   fire(){
     const p=this.player;if(p.shoot>0||p.stagger>0)return;
@@ -209,7 +210,6 @@ export class ArenaEngine {
       const dist=distance(e,p),lane=Math.abs(e.y-p.y),dx=p.x-e.x,dy=p.y-e.y;e.face=dx>0?1:-1;
       if(e.stun<=0){
         if(e.kind==="caster"&&dist<330&&e.cool<=0){const a=Math.atan2(dy-35,dx);this.shots.push({x:e.x,y:e.y-45,vx:Math.cos(a)*225,vy:Math.sin(a)*225,life:2,dmg:13,kind:7,friendly:false,radius:7,hits:new Set(),pierce:false});e.cool=2.2}
-        else if(dist>e.kind==="boss"?90:46){/* movement handled below for correct precedence */}
         if(dist>(e.kind==="boss"?110:45)){
           const chase=e.kind==="caster"&&dist<180?-.3:1;
           const m=Math.max(1,Math.hypot(dx,dy));
@@ -251,5 +251,5 @@ export class ArenaEngine {
   }
   // Rendering is implemented in arena-art.ts, separate from simulation.
   render(){this.drawScene(this.ctx)}
-  drawScene(_g:CanvasRenderingContext2D){}
+  drawScene(g:CanvasRenderingContext2D){ renderArena(this,g) }
 }
