@@ -4,15 +4,17 @@ Free-to-play arcade belt-scroller prototype with original hand-coded fantasy art
 
 **Play:** https://oeent.github.io/operation-free-the-beast/
 
+**3.1 (exploration update):** Waves are limited to 2/4/6 active enemies, and new encounters only start when you advance down the road. Beast form is randomly selected on every transformation, never the same one twice in a row. Three breakable alchemist shops award random gun upgrades plus magic potions or arcane bombs. Trees, towers and shop rooftops have jump-to-land platforms. Combat breaks deliberately leave room to explore.
+
 **Development repository:** https://github.com/OEent/operation-free-the-beast
 
 ## What's new in 3.0
 - Side-scrolling 2.5D battlefield: move LEFT, RIGHT, UP and DOWN on the road; characters overlap based on their lane depth.
-- 3 chapters: Shattered Road, Witchfire Marsh, Obsidian Forge. Three combat-lock arenas with ambushes and rewards; Void Colossus finale.
+- 3 chapters: Shattered Road, Witchfire Marsh, Obsidian Forge. Three combat-lock arenas with 2/4/6 enemy waves and rewards; Void Colossus finale. More roadside shops, trees, towers, jumpable ledges and downtime for exploration.
 - Widened melee combos, area knockback, greater reach; the boss and elites have distinct stats.
 - Eight switchable guns: Ranger, Storm SMG, Scattergun, Rail Lance, Inferno, Homing Rocket, Arc Caster, Frost Burst. Auto-aim helps find targets; pickups level guns up.
-- Smash destructible loot chests or shoot floating rune targets for ammo, weapon caches, temporary shields, health, and beast fury.
-- Four beast transformations (25 seconds): Inferno Hound, Storm Drake, Moonfang, and Arcane Titan. Forms have different power, speed and projectile properties.
+- Smash destructible loot chests and breakable alchemist shops, or shoot floating rune targets for ammo, gun caches, temporary shields, health, magic potions, bombs, and beast fury.
+- Four randomized beast transformations (~28 seconds): Inferno Hound, Storm Drake, Moonfang, and Arcane Titan. A different beast is chosen for each activation and none repeats immediately. Forms have different anatomies, power, speed and projectile properties.
 - Original drawn monsters and scenery, particle explosions, glow, camera shake, scoring and local high score.
 - Landscape touch controls are auto-created in mobile browser and native app.
 
@@ -24,9 +26,10 @@ Free-to-play arcade belt-scroller prototype with original hand-coded fantasy art
 | Attack with wide melee | J | CLAW |
 | Shoot / auto-aim | K (hold) | FIRE (hold) |
 | Switch gun | Q | GUN |
-| Cycle among beast forms | B (or number keys 1–4 cycle) | FORM |
+| Beast roulette | E (randomizes when activated) | BEAST |
 | Transform (requires 40 energy) | E | BEAST |
-| Magical shockwave | L | BLAST |
+| Magic shockwave / potion strikes | L | BLAST |
+| Arcane bomb | F (after collecting bombs) | BOMB |
 | Jump | Space | JUMP |
 | Dash | Shift | DASH |
 | Pause | P | Pause |
