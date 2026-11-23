@@ -1,29 +1,71 @@
-# IRONFANG: BEASTFIRE
-Original dark-fantasy arcade game with adaptive enemies, six guns, infernal beast transformation and offline-friendly canvas rendering.
+# IRONFANG: BEASTFIRE — ASCENSION (Version 3.0)
 
-## Play / develop
+Free-to-play arcade belt-scroller prototype with original hand-coded fantasy artwork, depth-lane movement, huge melee attacks, eight gun classes, challenge rewards, three combat arenas, and four transformative beast powers.
+
+**Play:** https://oeent.github.io/operation-free-the-beast/
+
+**Development repository:** https://github.com/OEent/operation-free-the-beast
+
+## What's new in 3.0
+- Side-scrolling 2.5D battlefield: move LEFT, RIGHT, UP and DOWN on the road; characters overlap based on their lane depth.
+- 3 chapters: Shattered Road, Witchfire Marsh, Obsidian Forge. Three combat-lock arenas with ambushes and rewards; Void Colossus finale.
+- Widened melee combos, area knockback, greater reach; the boss and elites have distinct stats.
+- Eight switchable guns: Ranger, Storm SMG, Scattergun, Rail Lance, Inferno, Homing Rocket, Arc Caster, Frost Burst. Auto-aim helps find targets; pickups level guns up.
+- Smash destructible loot chests or shoot floating rune targets for ammo, weapon caches, temporary shields, health, and beast fury.
+- Four beast transformations (25 seconds): Inferno Hound, Storm Drake, Moonfang, and Arcane Titan. Forms have different power, speed and projectile properties.
+- Original drawn monsters and scenery, particle explosions, glow, camera shake, scoring and local high score.
+- Landscape touch controls are auto-created in mobile browser and native app.
+
+## Controls
+
+| Action | Keyboard | Mobile |
+| --- | --- | --- |
+| Move in the road | WASD / arrows | On-screen D-pad |
+| Attack with wide melee | J | CLAW |
+| Shoot / auto-aim | K (hold) | FIRE (hold) |
+| Switch gun | Q | GUN |
+| Cycle among beast forms | B (or number keys 1–4 cycle) | FORM |
+| Transform (requires 40 energy) | E | BEAST |
+| Magical shockwave | L | BLAST |
+| Jump | Space | JUMP |
+| Dash | Shift | DASH |
+| Pause | P | Pause |
+| Start/replay | Enter | START |
+
+## Developer quick start
+
 ```sh
 npm install
 npm run dev
 npm run build
+npx tsc --noEmit -p tsconfig.arena.json
 ```
-Main build is a static browser game, hosted for free through GitHub Pages. Keyboard: arrows/WASD to move, SPACE jump, J melee, K shoot, Q cycle weapons, E transform, L special, SHIFT dash. Landscape mobile touch controls are generated automatically.
 
-## Native mobile app roadmap
-This project uses **Capacitor**, an open-source web-to-native wrapper, to avoid rebuilding our canvas engine. The native Android and iOS projects must first be created locally with the free platform toolchains:
+Game 3.0 is in `src/game/arena.ts` and the original procedural renderer is `src/game/arena-art.ts`. The previous Lovable-derived platform engine is preserved as `src/game/engine.ts` for rollback. `src/game/standalone.ts` selects which engine starts.
+
+### Android APK
+GitHub Actions automatically builds an Android debug APK after code pushes. Download the artifact named `ironfang-beastfire-android-debug-apk` from successful **Build Android test APK** runs. These debug builds are for development/testing, not signed Play Store releases.
+
+To build Android locally:
 ```sh
 npm install
 npx cap add android
 npm run mobile:android
 npx cap open android
 ```
-On a Mac with Xcode installed:
+
+For iOS, use a Mac with Xcode:
 ```sh
 npx cap add ios
 npm run mobile:ios
 npx cap open ios
 ```
-Android Studio and Xcode compile and sign the native package. No native binary is committed yet. Do not publish/store-list until thoroughly testing real devices, adding store artwork, privacy policy, player support, age ratings and compliant monetization.
 
-## Monetization design
-Keep the game playable without payment. Monetization can later use cosmetic skins, optional expansion packs, or rewarded ads if implemented with explicit player consent and platform compliant SDKs. **No ad SDK, purchases or tracking are included yet.** Test player retention before adding any monetization.
+### Publishing and monetization
+No paid loot boxes, ads, purchases, tracking SDKs, or monetization code are installed. Loot crates use in-game combat rewards, no cash. If monetized later, favor cosmetic items and optional content, avoid manipulative mechanics, and meet the relevant store's testing, privacy, disclosure, age-rating and billing policies.
+
+## License and safety
+Game characters, names, levels, and procedural artwork here were newly authored for IRONFANG. No sprites, trademarks or copyrighted soundtracks were extracted from any existing arcade franchise. The app relies on permissive/open-source web tooling (Vite, TypeScript and Capacitor) and native platform build tools. Inspect dependency and asset licenses before introducing external packages or art.
+
+## Development status
+Web/Android builds are run automatically in GitHub Actions; a successful build checks compilation, **not** whether combat is bug-free or the performance feels polished on a real phone. Player feedback, gameplay balancing, device testing, reliable saves, polished sprite sheets and store-ready packaging remain future milestones.
