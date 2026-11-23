@@ -1,0 +1,23 @@
+name: Validate IRONFANG v3 engine
+on:
+  push:
+    branches: [feature/ironfang-v3-belt-scroller, main]
+    paths:
+      - 'src/game/**'
+      - 'tsconfig.arena.json'
+      - 'package.json'
+      - '.github/workflows/validate-v3.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npx tsc --noEmit --project tsconfig.arena.json
+      - run: npm run build
