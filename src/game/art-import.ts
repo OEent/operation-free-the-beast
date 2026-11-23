@@ -103,11 +103,11 @@ export function installBeastArtPicker(isMenu:()=>boolean){
         try{
           const contents:Unzipped=unzipSync(new Uint8Array(await file.arrayBuffer()),{
             filter:(entry)=>entry.originalSize<15*1024*1024&&
-              /\\.(png|jpg|jpeg|webp)$/i.test(entry.name)&&!entry.name.includes("__MACOSX")
+              /\.(png|jpg|jpeg|webp)$/i.test(entry.name)&&!entry.name.includes("__MACOSX")
           });
           for(const [name,bytes] of Object.entries(contents)){
             extracted.push({name,blob:new Blob([new Uint8Array(bytes)],{
-              type:/\\.webp$/i.test(name)?"image/webp":/\\.jpe?g$/i.test(name)?"image/jpeg":"image/png"
+              type:/\.webp$/i.test(name)?"image/webp":/\.jpe?g$/i.test(name)?"image/jpeg":"image/png"
             })});
           }
         }catch(err){console.warn("Unreadable ZIP file",err);msg.textContent="ZIP import failed"}
