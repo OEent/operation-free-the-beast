@@ -1,3 +1,4 @@
+import { beasts } from "./beast-illustrations";
 import type { ArenaEngine } from "./arena";
 
 type G=CanvasRenderingContext2D;
@@ -284,6 +285,42 @@ function warrior(g:G,e:ArenaEngine,time:number) {
 function beastDraw(g:G,e:ArenaEngine,t:number){
  const p=e.player,bob=Math.sin(t*7)*2,flash=p.attack>0,blast=p.shoot>0;
  const locomotion=e.motion,step=Math.sin(e.gait),landing=p.z>0;
+ const illustration=beasts[e.beastForm];
+ if(illustration?.complete&&illustration.naturalWidth>0){
+   const form=e.beastForm;
+   const widths=[277,320,236,290], heights=[215,247,241,260], w=widths[form]!,h=heights[form]!;
+   const aura=["#ff8f3e","#46e5ff","#be8dff","#d875ff"][form]!;
+   g.save();
+   g.translate(0,Math.sin(t*6)*2-Math.abs(step)*locomotion*4);
+   if(p.dash>0)g.rotate(-.08);
+   if(landing)g.rotate(-.04);
+   g.rotate(Math.sin(e.gait)*locomotion*(form===0?.012:form===1?.026:.038));
+   // Subtle squash and stretch sells the walk cycle while retaining a detailed
+   // fully illustrated silhouette, rather than reassembling blocky geometry.
+   g.scale(1+Math.cos(e.gait)*.025*locomotion,1+Math.sin(e.gait)*.022*locomotion);
+   const y=-h*.89;
+   glow(g,0,-h*.54,h*.51,aura,.18);
+   if(flash){
+     g.save();g.globalAlpha=.55;g.globalCompositeOperation="screen";
+     for(let k=0;k<3;k++){
+       g.beginPath();g.arc(form===1?120:98,-h*.51,76+k*13,-1.2+k*.09,1.1+k*.08);
+       g.lineWidth=10-k*2;g.strokeStyle=aura;g.stroke();
+     }
+     g.restore();
+   }
+   g.drawImage(illustration,-w*.52,y,w,h);
+   if(blast){
+     const fromX=form===1?133:form===0?125:form===3?134:98,yy=form===1?-h*.61:form===3?-h*.64:-h*.5;
+     glow(g,fromX,yy,54,aura,.63);
+     line(g,[fromX,yy,fromX+65,yy-9,fromX+126,yy+Math.sin(t*33)*5],aura,13);
+     line(g,[fromX,yy,fromX+145,yy-2],"#fff4dd",3);
+     for(let k=0;k<7;k++)ellipse(g,fromX+30+k*18,yy+Math.sin(t*13+k)*12,3,2,k%2?"#fff5db":aura);
+   }
+   if(locomotion>.65&&p.z===0){
+     for(let k=0;k<3;k++)ellipse(g,-w*.2+k*13,Math.sin(t*15+k)*4,5,2,form===0?"#fc924b":"#b2c5ef");
+   }
+   g.restore();return;
+ }
  g.save();g.translate(0,bob-Math.abs(step)*locomotion*6);
  if(p.dash>0)g.rotate(-.10);
  if(landing)g.rotate(-.06);
