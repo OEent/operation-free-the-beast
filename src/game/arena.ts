@@ -265,7 +265,7 @@ export class ArenaEngine {
     if(p.x>3950&&this.stage<2){this.stage=2;this.tell("CHAPTER III: THE OBSIDIAN FORGE",3)}
     // Three distinct locked arenas with fair reward after clearing each battle.
     const battleX=[1640,3570,5160];
-    if(this.gate<3&&!this.arenaActive&&p.x>battleX[this.gate]!-190){
+    if(this.gate<3&&!this.arenaActive&&!this.encounterActive&&p.x>battleX[this.gate]!-190){
       this.arenaActive=true;this.arenaClears++;this.waveTimer=999;
       this.tell(["RUINS ARENA — SURVIVE THE AMBUSH!","MARSH ARENA — BREAK THE HEX!","FORGE ARENA — FINAL GAUNTLET!"][this.gate]!,3.3);
       for(let k=0;k<[2,4,6][this.gate]!;k++){

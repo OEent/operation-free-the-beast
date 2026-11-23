@@ -139,6 +139,19 @@ function warrior(g:G,e:ArenaEngine,time:number){
  if(beast){beastDraw(g,e,time);g.restore();return}
  // More dimensional than the previous tiny blocky protagonist: layered armored silhouette.
  const step=Math.sin(time*11)*(Math.abs((e.input.down("right")?1:0)-(e.input.down("left")?1:0))?4:1);
+ // Unique protagonist: weathered azure storm-cloak, horned mask, rune-etched
+ // sword and asymmetrical brass/cyan armor. Cloth moves separately from legs.
+ const capeSway=Math.sin(time*7)*5;
+ poly(g,[-10,-64,0,-78,-32,-76,-48+capeSway,-35,-36+capeSway,-6,-15,-17],"#162c48");
+ poly(g,[-16,-66,-5,-75,-33,-66,-45+capeSway,-27,-33+capeSway,-10,-21,-25],"#285b77");
+ line(g,[-28,-61,-43+capeSway,-31,-33+capeSway,-10],"#5be4ef",2);
+ for(let k=0;k<4;k++)ellipse(g,-33+capeSway*.4+k*5,-16+Math.sin(time*9+k)*3,2,2,k%2?"#8aecff":"#f5b968");
+ // Brushed brass shoulder emblem with electric-blue crystal inlay.
+ poly(g,[-20,-67,-18,-77,-3,-78,0,-68,-12,-61],"#edbb6b");
+ poly(g,[-17,-69,-14,-74,-6,-72,-9,-67],"#3ab5cc");
+ poly(g,[7,-70,15,-77,25,-70,23,-59,13,-57],"#b6a2a1");
+ line(g,[12,-75,24,-67,16,-59],"#efce89",2);
+
  for(const [x,d] of [[-8,step],[8,-step]]){
   poly(g,[Number(x)-6,-24,Number(x)+5,-24,Number(x)+4+Number(d),-1,Number(x)-8+Number(d),-1],"#24283e");
   rect(g,Number(x)-6+Number(d),-9,13,5,"#8391a8");
@@ -153,8 +166,24 @@ function warrior(g:G,e:ArenaEngine,time:number){
  poly(g,[-14,-70,-7,-85,10,-84,17,-69,7,-62,-9,-62],"#303747");
  poly(g,[-9,-77,12,-77,10,-64,-7,-65],"#a9b4b9");
  rect(g,-6,-72,17,4,"#091829");rect(g,3,-71,6,2,"#68faff");
+ // Recognizable split horn silhouette and signature scar over one lens.
+ poly(g,[-12,-79,-18,-96,-4,-85],"#b9c6d0");
+ poly(g,[6,-83,15,-104,19,-80],"#b4a7b6");
+ poly(g,[3,-75,7,-86,11,-74],"#ffcf79");
+ rect(g,-14,-62,31,3,"#c69e63");
+ // A glowing runestone fuels the bracer and signature sword.
+ glow(g,19,-47,18,"#5ef9ff",.32);rect(g,14,-48,10,6,"#4ad8f0");
+
  line(g,[13,-42,29,-38,36,-37],"#31415a",6);
- line(g,[23,-39,39,-39],"#e0d7a8",3);
+ // The gun silhouette changes with the currently equipped weapon.
+ const rail=e.weapon===3,rocket=e.weapon===5,flame=e.weapon===4;
+ line(g,[23,-39,rail?57:rocket?49:flame?45:39,-39],rocket?"#e9a96f":"#e4d7a8",rail?6:4);
+ if(rail){rect(g,33,-45,25,3,"#6cf3ff");rect(g,51,-44,8,10,"#a4fbff")}
+ if(rocket){poly(g,[25,-47,53,-47,64,-39,53,-30,25,-30],"#777883");rect(g,48,-43,7,9,"#ffc35d")}
+ if(flame){rect(g,26,-47,18,8,"#aa5943");glow(g,43,-43,14,"#ffad41",.3)}
+ if(e.weapon===2){poly(g,[27,-48,48,-46,52,-35,28,-35],"#b49376")}
+ if(e.weapon===6||e.weapon===7){glow(g,45,-39,17,e.weapon===6?"#ba99ff":"#8bf6ff",.48)}
+
  if(p.attack>0){glow(g,64,-45,31,"#88ffff",.25);line(g,[24,-58,95,-64+Math.sin(time*50)*12],"#e4fcff",7);line(g,[33,-53,99,-55],"#5febff",2)}
  if(p.shoot>0){glow(g,39,-39,20,"#ffe0a0",.65);ellipse(g,39,-39,8,4,"#fff6c9")}
  g.restore();
@@ -380,7 +409,7 @@ function overlay(g:G,e:ArenaEngine){
   txt(g,"THE FOUR BEASTS HAVE AWAKENED",W/2,251,21,"#f8dbbd","center");
   txt(g,"PRESS ENTER / START TO PLAY",W/2,332,25,"#fff9d5","center");
   txt(g,"WASD MOVE IN ALL FOUR DIRECTIONS  •  J MELEE  •  K FIRE  •  Q CHANGE GUN",W/2,393,14,"#bbd1e5","center");
-  txt(g,"SPACE JUMP  •  E BEAST  •  L MAGIC  •  SHIFT DASH",W/2,418,14,"#bbd1e5","center");
+  txt(g,"SPACE JUMP / CLIMB  •  E RANDOM BEAST  •  L MAGIC  •  F BOMB",W/2,418,14,"#bbd1e5","center");
   txt(g,"BEAST FORM IS RANDOM EVERY TIME  •  F: ARCANE BOMB",W/2,448,12,"#e6c2a9","center");
  }else{
   txt(g,e.state==="pause"?"PAUSED":e.state==="win"?"VICTORY! THE ROAD IS YOURS":"THE ROAD CLAIMS YOU",W/2,231,40,e.state==="win"?"#fff2a6":"#ffbb82","center");

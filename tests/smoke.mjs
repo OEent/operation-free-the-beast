@@ -44,4 +44,44 @@ if(!Number.isFinite(action.checksum)||action.checksum===0)throw Error("Canvas un
 await page.screenshot({path:"smoke-gameplay.png"});
 console.log("PASS — menu, game start, movement, firing, beast selection, transformation, melee, render pipeline");
 console.log(JSON.stringify({menu,play,action}));
+// Gameplay unit smoke checks inside the actual Vite/browser runtime.
+const mechanics=await page.evaluate(async()=>{
+  const {ArenaEngine}=await import("/src/game/arena.ts");
+  const {loadSettings}=await import("/src/game/storage.ts");
+  const cv=document.createElement("canvas");
+  const e=new ArenaEngine(cv,{standalone:true,settings:loadSettings()});
+  e.newGame();
+  const waveSizes=[];
+  for(let n=0;n<3;n++){e.spawnWave();waveSizes.push(e.enemies.filter(en=>en.alive).length);
+    e.enemies.forEach(en=>en.alive=false)}
+  for(let n=0;n<12;n++)e.spawn("grunt",120+n*20,390);
+  const cap=e.enemies.filter(en=>en.alive).length;
+  const shop=e.props.find(o=>o.kind==="shop");
+  if(!shop)throw Error("No alchemist shop");
+  e.hitProp(shop,999);
+  const shopBreak=!shop.alive&&e.drops.some(d=>d.kind==="weapon")&&e.drops.some(d=>d.kind==="magic"||d.kind==="bomb");
+  e.enemies.forEach(en=>en.alive=false);
+  e.waveIndex=9;e.gate=3;e.encounterActive=false;
+  e.player.x=100;e.player.y=400;e.player.z=0;e.player.vz=0;
+  const forms=[];
+  for(let n=0;n<8;n++){
+    e.player.energy=100;e.player.beastTime=0;
+    e.input.press("transform");e.input.poll();e.update(1/60);e.input.endStep();
+    forms.push(e.beastForm);
+    e.input.release("transform");e.input.poll();e.input.endStep();
+  }
+  const uniqueEveryTime=forms.every((f,j)=>j===0||f!==forms[j-1]);
+  const tree=e.props.find(o=>o.kind==="tree");
+  if(!tree)throw Error("No climbable tree");
+  e.enemies.forEach(en=>en.alive=false);
+  e.player.beastTime=0;e.player.x=tree.x;e.player.y=tree.y;
+  e.player.z=tree.h+2;e.player.vz=-45;e.update(.09);
+  const landed=Math.abs(e.player.z-tree.h)<.1&&e.player.vz===0;
+  e.destroy();
+  return {waveSizes,cap,shopBreak,forms,uniqueEveryTime,landed};
+});
+if(JSON.stringify(mechanics.waveSizes)!=="[2,4,6]"||mechanics.cap!==6||!mechanics.shopBreak||!mechanics.uniqueEveryTime||!mechanics.landed)
+  throw Error("Mechanics regression: "+JSON.stringify(mechanics));
+console.log("PASS — 2/4/6 wave pacing, max 6 alive, breakable loot shops, random non-repeating beasts, climbable tree roof");
+console.log(JSON.stringify(mechanics));
 await browser.close();
