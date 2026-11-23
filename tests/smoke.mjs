@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { zipSync } from "fflate";
 const url = "http://127.0.0.1:5173/";
 const browser = await chromium.launch({headless:true,args:["--no-sandbox"]});
 const page=await browser.newPage({viewport:{width:1365,height:768},deviceScaleFactor:1});
@@ -162,6 +163,25 @@ const saved=await mobilePage.evaluate(()=>new Promise((resolve,reject)=>{
  };req.onerror=()=>reject(req.error)
 }));
 if(!saved)throw Error("Custom HD image was not persisted locally");
+const zip=zipSync({
+ "inferno_hound.png":new Uint8Array(png),
+ "storm_drake.png":new Uint8Array(png),
+ "moonfang_werebeast.png":new Uint8Array(png),
+ "arcane_titan.png":new Uint8Array(png)
+});
+await mobilePage.locator('input[type="file"]').setInputFiles({name:"ironfang_beasts.zip",mimeType:"application/zip",buffer:Buffer.from(zip)});
+await mobilePage.waitForTimeout(250);
+const importedCount=await mobilePage.evaluate(()=>new Promise((resolve,reject)=>{
+ const open=indexedDB.open("ironfang-art-assets-v1");
+ open.onsuccess=()=>{
+   const tx=open.result.transaction("beast-skins","readonly");
+   const req=tx.objectStore("beast-skins").getAllKeys();
+   req.onsuccess=()=>resolve(req.result.length);req.onerror=()=>reject(req.error);
+ };
+ open.onerror=()=>reject(open.error);
+}));
+if(importedCount!==4)throw Error("ZIP beast skins failed to persist: "+importedCount);
+console.log("PASS — ZIP import saves four detailed beasts",importedCount);
 console.log("PASS — optional original-art import and persistence works offline");
 const zone=mobilePage.getByLabel("Analog movement joystick");
 await zone.waitFor();
