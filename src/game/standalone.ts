@@ -1,10 +1,13 @@
 import { ArenaEngine as Engine } from "./arena";
 import { loadSettings } from "./storage";
 import type { Action } from "./input";
+import { installBeastArtPicker, restoreBeastArt } from "./art-import";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const engine = new Engine(canvas, { standalone: true, settings: loadSettings() });
 engine.start();
+restoreBeastArt();
+installBeastArtPicker(()=>engine.state==="menu"||engine.state==="pause");
 
 // No paid plugin / SDK required: pointer controls work in Android / iOS WebViews
 // and in a mobile browser. Keyboard and controllers keep working on desktop.
