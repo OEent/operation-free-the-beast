@@ -8,6 +8,15 @@ Free-to-play arcade belt-scroller prototype with original hand-coded fantasy art
 
 **Development repository:** https://github.com/OEent/operation-free-the-beast
 
+## 3.2 — Animated Combat / Mobile Test Build
+
+The running game now uses articulated character animation driven by movement and combat state (not a concept-image slideshow). The storm knight has independent gait/leg movement, flowing cape, weapon recoil, slash windup/follow-through, sky-blue slash arcs, jump poses, and dash afterimages. Holding the melee button queues combos automatically for mobile. Successful melee hits add brief arcade hit-stop, enemy stagger and impact bursts. The four beast bodies now respond to locomotion as well. These are procedural in-game character rigs and animations; the high-resolution illustrated concept sheets are **not** yet converted to production sprite atlases.
+
+- Live web game: https://oeent.github.io/operation-free-the-beast/
+- Installable Android test APK: download the latest successful `Build Android test APK` artifact from GitHub Actions.
+- Browser tests verify movement-driven animation states, combo buffering, and the older combat mechanics.
+- Future production graphics milestone: art-direct and rig actual high-resolution sprite assets, then optimize for mobile performance.
+
 ## What's new in 3.0
 - Side-scrolling 2.5D battlefield: move LEFT, RIGHT, UP and DOWN on the road; characters overlap based on their lane depth.
 - 3 chapters: Shattered Road, Witchfire Marsh, Obsidian Forge. Three combat-lock arenas with 2/4/6 enemy waves and rewards; Void Colossus finale. More roadside shops, trees, towers, jumpable ledges and downtime for exploration.
