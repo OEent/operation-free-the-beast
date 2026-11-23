@@ -16,7 +16,7 @@ interface Body extends Box { vx: number; vy: number; onGround: boolean }
 interface Solid extends Box { oneWay: boolean; zone: number }
 interface Crate extends Box { hp: number; alive: boolean }
 type BKind = "bullet" | "ember" | "fire" | "wave" | "shell" | "orb" | "ebullet";
-interface Bullet { x: number; y: number; vx: number; vy: number; r: number; dmg: number; owner: "p" | "e"; life: number; kind: BKind; hits?: Set<object> }
+interface Bullet { x: number; y: number; vx: number; vy: number; r: number; dmg: number; owner: "p" | "e"; life: number; kind: BKind; hits?: Set<object>; target?: Enemy | null; homing?: number }
 interface Part { x: number; y: number; vx: number; vy: number; life: number; max: number; c: string; s: number; grav: number; glow?: boolean }
 interface Pickup { x: number; y: number; vy: number; kind: "hp" | "ammo" | "energy" | "gem"; t: number; alive: boolean }
 type EType = "soldier" | "hound" | "flyer";
@@ -98,6 +98,26 @@ export class Engine {
   setState(s: GameState) { this.state = s; this.opts.onState?.(s); }
   sfx(n: Sfx) { this.sound.play(n); }
 
+  // IRONFANG_FREE_BEAST_V1: automatic lock-on aiming with gentle homing.
+  findTarget(x: number, y: number, face: number): Enemy | null {
+    let chosen: Enemy | null = null, score = Infinity;
+    for (const e of this.enemies) {
+      if (!e.alive || e.hp <= 0) continue;
+      const dx = e.x + e.w / 2 - x, dy = e.y + e.h / 2 - y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 265 || dist < 1 || (dx * face < 0 && dist > 55)) continue;
+      const n = dist + Math.abs(dy) * .12 + (dx * face < 0 ? 65 : 0) - (e.type === "flyer" ? 12 : 0);
+      if (n < score) { score = n; chosen = e; }
+    }
+    return chosen;
+  }
+  aimedVelocity(x: number, y: number, face: number, speed: number) {
+    const target = this.findTarget(x, y, face);
+    if (!target) return { vx: face * speed, vy: 0, target: null as Enemy | null };
+    const dx = target.x + target.w / 2 - x, dy = target.y + target.h / 2 - y;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    return { vx: dx / len * speed, vy: dy / len * speed, target };
+  }
   /* ---------------- LEVEL ---------------- */
   zoneAt(x: number) { return x >= ZONE_X[2]! ? 2 : x >= ZONE_X[1]! ? 1 : 0; }
   buildLevel() {
@@ -325,11 +345,14 @@ export class Engine {
     if (I.down("shoot") && p.shootCool <= 0) {
       const mx = p.face > 0 ? p.x + p.w + 6 : p.x - 6, my = p.y + (p.beast ? 8 : 8);
       if (p.beast) {
-        p.shootCool = 0.32;
-        this.bullets.push({ x: mx, y: my, vx: p.face * 260, vy: 0, r: 5, dmg: 3, owner: "p", life: 0.6, kind: "fire" }); this.sfx("ember");
+        p.shootCool = 0.22;
+        const aim = this.aimedVelocity(mx, my, p.face, 340);
+        this.bullets.push({ x: mx, y: my, vx: aim.vx, vy: aim.vy, target: aim.target, homing: 8, r: 8, dmg: 7, owner: "p", life: 1.1, kind: "fire" });
+        this.burst(mx, my, 8, "#ff8a2a", 130, 0, 3, true); this.sfx("ember");
       } else if (p.ammo > 0) {
         p.shootCool = 0.12; p.ammo--; p.shootFlash = 0.06;
-        this.bullets.push({ x: mx, y: my + (Math.random() - 0.5) * 2, vx: p.face * 380, vy: 0, r: 2, dmg: 1, owner: "p", life: 0.8, kind: "bullet" });
+        const aim = this.aimedVelocity(mx, my, p.face, 420);
+        this.bullets.push({ x: mx, y: my, vx: aim.vx, vy: aim.vy, target: aim.target, homing: 10, r: 3, dmg: 2, owner: "p", life: 1.0, kind: "bullet" });
         this.lights.push({ x: mx, y: my, r: 40, c: "#ffcc66", a: 1 }); this.sfx("shoot");
         this.parts.push({ x: p.x + p.w / 2, y: my, vx: -p.face * 40, vy: -80, life: 0.5, max: 0.5, c: "#e0b040", s: 1, grav: 600 });
       } else if (I.pressed("shoot")) { this.sfx("click"); this.ftext(p.x, p.y - 8, "NO AMMO", "#ff5a5a"); this.say("Out of rounds! Melee, or smash crates for ammo.", "noammo", 15); }
@@ -339,8 +362,8 @@ export class Engine {
       if (p.beast && p.energy >= 20) {
         p.energy -= 20; p.specialCool = 0.6;
         const gy = p.y + p.h;
-        for (const d of [-1, 1]) this.bullets.push({ x: p.x + p.w / 2, y: gy - 8, vx: d * 300, vy: 0, r: 8, dmg: 4, owner: "p", life: 0.9, kind: "wave", hits: new Set() });
-        for (const e of this.enemies) if (e.alive && Math.abs(e.x - p.x) < 70 && Math.abs(e.y - p.y) < 50) this.hurtEnemy(e, 3, Math.sign(e.x - p.x) || 1, false);
+        for (const d of [-1, 1]) this.bullets.push({ x: p.x + p.w / 2, y: gy - 8, vx: d * 300, vy: 0, r: 12, dmg: 8, owner: "p", life: 1.15, kind: "wave", hits: new Set() });
+        for (const e of this.enemies) if (e.alive && Math.abs(e.x - p.x) < 110 && Math.abs(e.y - p.y) < 75) this.hurtEnemy(e, 8, Math.sign(e.x - p.x) || 1, false);
         this.addShake(9); this.hitStop = 0.08; this.chroma = 1; this.flashT = 0.12; this.sfx("shock"); this.burst(p.x + p.w / 2, gy, 30, "#ff8a2a", 200, 200, 3, true);
       } else if (!p.beast && p.energy >= 30) {
         p.energy -= 30; p.specialCool = 0.5;
@@ -351,14 +374,14 @@ export class Engine {
     // transform
     if (I.pressed("transform")) {
       if (!p.beast && p.energy >= 50) {
-        p.beast = true; p.transT = 0.6; p.inv = 0.8; const bottom = p.y + p.h; p.w = 20; p.h = 28; p.y = bottom - p.h; p.x -= 4; p.hp = Math.min(100, p.hp + 20);
+        p.beast = true; p.transT = 0.6; p.inv = 0.8; const bottom = p.y + p.h; p.w = 32; p.h = 43; p.y = bottom - p.h; p.x -= 10; p.hp = Math.min(100, p.hp + 20);
         this.addShake(8); this.chroma = 1.2; this.flashT = 0.2; this.hitStop = 0.12; this.sfx("transform"); this.sfx("roar");
         this.burst(p.x + p.w / 2, p.y + p.h / 2, 50, "#ff6a1a", 220, -60, 3, true);
         this.say("BEASTFIRE UNLEASHED! Claws (J), fireballs (K), shockwave (L)!", "beast", 6);
       } else if (p.beast) this.revert();
       else { this.sfx("click"); this.ftext(p.x - 10, p.y - 8, "NEED 50% ENERGY", "#5ff6ff"); }
     }
-    if (p.beast) { p.energy -= 5 * dt; if (Math.random() < 0.5) this.parts.push({ x: p.x + Math.random() * p.w, y: p.y + Math.random() * 8, vx: (Math.random() - 0.5) * 20, vy: -40 - Math.random() * 40, life: 0.5, max: 0.5, c: Math.random() < 0.5 ? "#ff6a1a" : "#ffcc33", s: 2, grav: -40, glow: true }); if (p.energy <= 0) { p.energy = 0; this.revert(); } }
+    if (p.beast) { p.energy -= 1.8 * dt; if (Math.random() < 0.5) this.parts.push({ x: p.x + Math.random() * p.w, y: p.y + Math.random() * 8, vx: (Math.random() - 0.5) * 20, vy: -40 - Math.random() * 40, life: 0.5, max: 0.5, c: Math.random() < 0.5 ? "#ff6a1a" : "#ffcc33", s: 2, grav: -40, glow: true }); if (p.energy <= 0) { p.energy = 0; this.revert(); } }
     p.energy = Math.min(100, p.energy);
     const landing = !p.onGround;
     this.move(p, dt, cols);
@@ -575,6 +598,16 @@ export class Engine {
   updateBullets(dt: number, cols: Box[]) {
     const p = this.p;
     for (const b of this.bullets) {
+      if (b.owner === "p" && b.homing && b.target?.alive) {
+        const target = b.target;
+        const dx = target.x + target.w / 2 - b.x, dy = target.y + target.h / 2 - b.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 1) {
+          const speed = Math.max(50, Math.hypot(b.vx, b.vy)), blend = Math.min(1, dt * b.homing);
+          b.vx = b.vx * (1 - blend) + dx / dist * speed * blend;
+          b.vy = b.vy * (1 - blend) + dy / dist * speed * blend;
+        }
+      }
       b.life -= dt; b.x += b.vx * dt; b.y += b.vy * dt;
       if (b.kind === "orb") b.vy += 200 * dt;
       if (b.kind === "fire" || b.kind === "ember") { if (Math.random() < 0.7) this.parts.push({ x: b.x, y: b.y, vx: 0, vy: -20, life: 0.25, max: 0.25, c: "#ff8a2a", s: 2, grav: -50, glow: true }); }
@@ -806,10 +839,10 @@ export class Engine {
     if (p.deadT <= 0 && (p.inv <= 0 || Math.floor(this.time * 20) % 2 === 0 || p.transT > 0)) {
       g.save(); g.translate(Math.round(p.x + p.w / 2), Math.round(p.y + p.h)); if (p.face < 0) g.scale(-1, 1);
       const pose = { t: p.t, run: Math.abs(p.vx) / 100, air: !p.onGround, vy: p.vy, attack: p.attackT, combo: p.combo, shooting: p.shootFlash > 0, hurt: p.hurtT > 0, dash: p.dashT > 0 };
-      if (p.beast) drawBeast(g, pose); else drawRebel(g, pose);
+      if (p.beast) { g.save(); g.scale(1.75, 1.75); drawBeast(g, pose); g.restore(); } else drawRebel(g, pose);
       // slash arc
       if (p.attackT > 0.06) {
-        const k = 1 - p.attackT / 0.22, rad = p.beast ? 26 : p.combo === 3 ? 24 : 20;
+        const k = 1 - p.attackT / 0.22, rad = p.beast ? 39 : p.combo === 3 ? 24 : 20;
         g.strokeStyle = p.beast ? "#ffaa33" : "#bff8ff"; g.lineWidth = p.combo === 3 ? 3 : 2; g.globalAlpha = 0.9;
         const a0 = p.combo === 2 ? 1.2 - k * 2.4 : -1.2 + k * 2.4;
         g.beginPath(); g.arc(4, -p.h * 0.55, rad, a0 - 0.9, a0 + 0.3); g.stroke(); g.globalAlpha = 1;
