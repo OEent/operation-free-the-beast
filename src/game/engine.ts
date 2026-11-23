@@ -94,7 +94,7 @@ export class Engine {
   resize = () => {
     const parent = this.canvas.parentElement; if (!parent) return;
     const r = parent.getBoundingClientRect();
-    const scale = Math.max(1, Math.min(r.width / W, r.height / H));
+    const scale = Math.max(0.25, Math.min(r.width / W, r.height / H));
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     this.canvas.style.width = `${Math.floor(W * scale)}px`; this.canvas.style.height = `${Math.floor(H * scale)}px`;
     this.canvas.width = Math.floor(W * scale * dpr); this.canvas.height = Math.floor(H * scale * dpr);
