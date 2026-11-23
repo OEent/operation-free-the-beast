@@ -1,0 +1,36 @@
+name: IRONFANG browser playtest
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/game/**'
+      - 'index.html'
+      - 'tests/smoke.mjs'
+      - '.github/workflows/browser-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm install --no-save playwright@1.57.0
+      - run: npx playwright install --with-deps chromium
+      - name: Start local game server
+        run: |
+          (npm run dev -- --host 127.0.0.1 > /tmp/ironfang-vite.log 2>&1 &)
+          sleep 3
+      - name: Exercise actual game in Chromium
+        run: node tests/smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ironfang-browser-playtest-screenshots
+          path: smoke-*.png
+          if-no-files-found: ignore
