@@ -1,9 +1,9 @@
-export type Action = "left" | "right" | "up" | "down" | "jump" | "melee" | "shoot" | "special" | "dash" | "transform" | "pause" | "start" | "menu" | "restart" | "nextWeapon" | "nextBeast";
+export type Action = "left" | "right" | "up" | "down" | "jump" | "melee" | "shoot" | "special" | "dash" | "transform" | "pause" | "start" | "menu" | "restart" | "nextWeapon" | "nextBeast" | "bomb";
 const KEYMAP: Record<string, Action> = {
   KeyA: "left", ArrowLeft: "left", KeyD: "right", ArrowRight: "right",
   KeyW: "up", ArrowUp: "up", KeyS: "down", ArrowDown: "down",
   Space: "jump", KeyJ: "melee", KeyZ: "melee", KeyK: "shoot", KeyX: "shoot", KeyL: "special", KeyC: "special",
-  ShiftLeft: "dash", ShiftRight: "dash", KeyE: "transform", KeyP: "pause", Escape: "menu", Enter: "start", KeyR: "restart", KeyQ: "nextWeapon", Digit1: "nextBeast", Digit2: "nextBeast", Digit3: "nextBeast", Digit4: "nextBeast", KeyB: "nextBeast",
+  ShiftLeft: "dash", ShiftRight: "dash", KeyE: "transform", KeyP: "pause", Escape: "menu", Enter: "start", KeyR: "restart", KeyQ: "nextWeapon", Digit1: "nextBeast", Digit2: "nextBeast", Digit3: "nextBeast", Digit4: "nextBeast", KeyB: "nextBeast", KeyF: "bomb",
 };
 export class Input {
   private kb = new Set<Action>();
