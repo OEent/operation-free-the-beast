@@ -69,6 +69,18 @@ function background(g:G,e:ArenaEngine){
    glow(g,x,245,22,p.glow,.38);
   }
  }
+ // Arena gate silhouettes: energy barricades reveal where combat locks the road.
+ if(e.arenaActive&&e.gate<3){
+   const gateX=[1640,3570,5160][e.gate]!-e.cam+65;
+   if(gateX>-40&&gateX<W+40){
+     for(let k=0;k<12;k++){
+       const xx=gateX+Math.sin(e.time*5+k)*3;
+       rect(g,xx,297+k*18,8,16,k%2===0?"#6ff7ff83":"#ffac5392");
+     }
+     glow(g,gateX,406,105,"#8cffff",.4);
+     txt(g,"ARENA LOCK",gateX-12,289,13,"#b9f9ff","center");
+   }
+ } 
  // Floor mist / embers are deterministic sinusoids to avoid idle particle allocation.
  g.globalAlpha=.25;for(let k=0;k<15;k++){
   const x=(k*117+e.time*(zone===2?-17:12)-e.cam*.28)%1130-80;
@@ -283,6 +295,7 @@ export function renderArena(e:ArenaEngine,g:G){
  txt(g,"SCORE "+e.score.toLocaleString(),W-20,30,20,"#ffdf94","right");
  txt(g,"BEST "+Math.max(e.high,e.score).toLocaleString(),W-20,52,13,"#a9b5d1","right");
  txt(g,"KILLS "+e.kills,W-20,74,14,"#8ce4fb","right");
+ if(e.arenaActive)txt(g,"ARENA "+(e.gate+1)+"/3  •  CLEAR ALL ENEMIES",W/2,88,13,"#fff0b3","center");
  const progress=clamp(p.x/e.world,0,1);
  rect(g,425,12,206,8,"#1e2637");rect(g,425,12,206*progress,8,"#ef995e");
  for(let x=0;x<4;x++)rect(g,425+x*67,11,2,10,"#b8c6d6");

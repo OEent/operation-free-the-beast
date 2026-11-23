@@ -35,7 +35,7 @@ export class ArenaEngine {
   player:Player={x:100,y:410,hp:160,maxHp:160,energy:60,ammo:240,shield:0,beastTime:0,face:1,z:0,vz:0,inv:0,attack:0,attackId:0,attackChain:0,shoot:0,dash:0,special:0,stagger:0};
   cam=0;world=6100;time=0;last=0;acc=0;raf=0;shake=0;score=0;combo=0;comboT=0;kills=0;
   enemies:Enemy[]=[];crates:Crate[]=[];targets:RuneTarget[]=[];shots:Shot[]=[];particles:Particle[]=[];drops:Drop[]=[];numbers:TextFX[]=[];
-  id=0;wave=0;checkpoint=0;beastForm:Beast=0;weapon=0;weaponLevels=[1,1,1,1,1,1,1,1];waveTimer=1.8;
+  id=0;wave=0;checkpoint=0;beastForm:Beast=0;weapon=0;arenaActive=false;arenaClears=0;weaponLevels=[1,1,1,1,1,1,1,1];waveTimer=1.8;
   stage=0;gate=0;bossDefeated=false;high=0;screenW=W;screenH=H;
   announce="THE CURSED ROAD AWAITS";annT=4;audio:AudioContext|null=null;muted=false;
   constructor(canvas:HTMLCanvasElement,opts:{settings:Settings;standalone?:boolean}) {
@@ -69,7 +69,7 @@ export class ArenaEngine {
   }
   newGame(){
     this.state="play";this.player={x:100,y:410,hp:160,maxHp:160,energy:60,ammo:240,shield:0,beastTime:0,face:1,z:0,vz:0,inv:0,attack:0,attackId:0,attackChain:0,shoot:0,dash:0,special:0,stagger:0};
-    this.wave=0;this.gate=0;this.checkpoint=0;this.stage=0;this.bossDefeated=false;this.score=0;this.kills=0;this.combo=0;
+    this.wave=0;this.gate=0;this.checkpoint=0;this.stage=0;this.arenaActive=false;this.arenaClears=0;this.bossDefeated=false;this.score=0;this.kills=0;this.combo=0;
     this.enemies=[];this.shots=[];this.drops=[];this.particles=[];this.numbers=[];this.seedStage();this.waveTimer=1.1;this.cam=0;this.weapon=0;this.weaponLevels.fill(1);this.tell("CHAPTER I: THE SHATTERED ROAD");this.sound(400,.24);
   }
   spawn(kind:EnemyKind,x:number,y:number){
@@ -204,9 +204,30 @@ export class ArenaEngine {
     p.z=Math.max(0,p.z+p.vz*dt);p.vz-=940*dt;if(p.z===0)p.vz=0;
     if(p.x>1950&&this.stage<1){this.stage=1;this.tell("CHAPTER II: THE WITCHFIRE MARSH",3)}
     if(p.x>3950&&this.stage<2){this.stage=2;this.tell("CHAPTER III: THE OBSIDIAN FORGE",3)}
+    // Three distinct locked arenas with fair reward after clearing each battle.
+    const battleX=[1640,3570,5160];
+    if(this.gate<3&&!this.arenaActive&&p.x>battleX[this.gate]!-190){
+      this.arenaActive=true;this.arenaClears++;this.waveTimer=999;
+      this.tell(["RUINS ARENA — SURVIVE THE AMBUSH!","MARSH ARENA — BREAK THE HEX!","FORGE ARENA — FINAL GAUNTLET!"][this.gate]!,3.3);
+      for(let k=0;k<6+this.gate*2;k++){
+        this.spawn(k%4===0?"brute":k%4===1?"caster":k%4===2?"runner":"grunt",
+          p.x+140+k*35,335+(k%4)*43);
+      }
+      this.shake=14;this.sound(160,.35);
+    }
+    if(this.arenaActive){
+      p.x=Math.min(p.x,battleX[this.gate]!+65);
+      if(!this.enemies.some(en=>en.alive)){
+        this.arenaActive=false;this.gate++;this.waveTimer=2.7;
+        this.drop(p.x+88,385,"shield");this.drop(p.x+125,420,"weapon");
+        this.player.energy=clamp(this.player.energy+40,0,100);
+        this.tell("ARENA CLEARED! SHIELD + WEAPON CACHE!",3.5);this.score+=1500;this.sound(730,.32,"triangle");
+        this.burst(p.x+90,390,"#ffe6a3",60,260);
+      }
+    }
     if(p.x>this.checkpoint+900){this.checkpoint=Math.floor(p.x/900)*900;this.drop(p.x+65,p.y,"weapon")}
     this.waveTimer-=dt;
-    if(this.waveTimer<=0&&this.enemies.filter(e=>e.alive).length<2&&p.x<5300){this.spawnWave();this.waveTimer=3.5}
+    if(!this.arenaActive&&this.waveTimer<=0&&this.enemies.filter(e=>e.alive).length<2&&p.x<5300){this.spawnWave();this.waveTimer=3.5}
     if(p.x>5320&&!this.enemies.some(e=>e.kind==="boss")&&!this.bossDefeated)this.spawnWave();
     for(const e of this.enemies){
       if(!e.alive)continue;e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.cool-=dt;e.attacking=Math.max(0,e.attacking-dt);
