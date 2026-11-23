@@ -1,7 +1,7 @@
 name: IRONFANG browser playtest
 on:
   push:
-    branches: [main, feature/ironfang-v31-exploration-art]
+    branches: [main, feature/ironfang-v31-exploration-art, feature/ironfang-v32-animated-gameplay]
     paths:
       - 'src/game/**'
       - 'index.html'

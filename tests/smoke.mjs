@@ -84,4 +84,29 @@ if(JSON.stringify(mechanics.waveSizes)!=="[2,4,6]"||mechanics.cap!==6||!mechanic
   throw Error("Mechanics regression: "+JSON.stringify(mechanics));
 console.log("PASS — 2/4/6 wave pacing, max 6 alive, breakable loot shops, random non-repeating beasts, climbable tree roof");
 console.log(JSON.stringify(mechanics));
+const animation=await page.evaluate(async()=>{
+ const {ArenaEngine}=await import("/src/game/arena.ts");
+ const {loadSettings}=await import("/src/game/storage.ts");
+ const e=new ArenaEngine(document.createElement("canvas"),{standalone:true,settings:loadSettings()});
+ e.newGame();e.waveIndex=9;e.gate=3;
+ e.enemies.forEach(x=>x.alive=false);
+ e.input.press("right");e.input.poll();
+ for(let k=0;k<16;k++){e.update(1/60);e.input.endStep();e.input.poll()}
+ const moved=e.player.x>100&&e.motion>.5&&e.gait>.1;
+ e.input.release("right");e.input.endStep();e.input.poll();
+ for(let k=0;k<20;k++){e.update(1/60);e.input.endStep();e.input.poll()}
+ const slowed=e.motion<.2;
+ e.player.attack=0;e.input.press("melee");e.input.poll();e.update(1/60);e.input.endStep();e.input.release("melee");
+ const attack=e.player.attack>0&&e.player.attackChain===1;
+ e.player.attack=.15;e.input.press("melee");e.input.poll();e.update(1/60);e.input.endStep();
+ const buffered=e.queuedSlash;
+ e.input.release("melee");e.input.poll();
+ for(let k=0;k<15;k++){e.update(1/60);e.input.endStep();e.input.poll()}
+ const chained=e.player.attackChain===2;
+ e.player.dash=0;e.input.press("dash");e.input.poll();e.update(1/60);
+ const dashed=e.player.dash>0;
+ e.destroy();return {moved,slowed,attack,buffered,chained,dashed};
+});
+if(Object.values(animation).some(v=>!v))throw Error("Animation input regression: "+JSON.stringify(animation));
+console.log("PASS — movement-driven run cycle, deceleration, slash combo buffer, dash animation state",animation);
 await browser.close();
