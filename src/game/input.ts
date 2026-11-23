@@ -13,6 +13,13 @@ export class Input {
   private cur = new Set<Action>();
   private prev = new Set<Action>();
   anyPress = false;
+  // Continuous analog displacement, independent of discrete keyboard actions.
+  analogX = 0;
+  analogY = 0;
+  private padX = 0;
+  private padY = 0;
+  setAnalog(x:number,y:number) { const length=Math.hypot(x,y);this.analogX=Math.abs(x)<.035?0:x/Math.max(1,length);this.analogY=Math.abs(y)<.035?0:y/Math.max(1,length); }
+  axes(){const x=this.analogX||this.padX,y=this.analogY||this.padY;if(Math.hypot(x,y)>.04)return {x,y};const dx=(this.down('right')?1:0)-(this.down('left')?1:0),dy=(this.down('down')?1:0)-(this.down('up')?1:0);const length=Math.max(1,Math.hypot(dx,dy));return {x:dx/length,y:dy/length};}
   private onDown = (e: KeyboardEvent) => {
     const a = KEYMAP[e.code];
     if (!a) return;
@@ -21,7 +28,7 @@ export class Input {
     this.kb.add(a); this.latched.add(a); this.anyPress = true;
   };
   private onUp = (e: KeyboardEvent) => { const a = KEYMAP[e.code]; if (a) this.kb.delete(a); };
-  private onBlur = () => this.kb.clear();
+  private onBlur = () => {this.kb.clear();this.setAnalog(0,0);};
   attach() {
     window.addEventListener("keydown", this.onDown);
     window.addEventListener("keyup", this.onUp);
@@ -35,12 +42,13 @@ export class Input {
   press(a: Action) { this.touch.add(a); this.latched.add(a); this.anyPress = true; }
   release(a: Action) { this.touch.delete(a); }
   poll() {
-    this.pad.clear();
+    this.pad.clear();this.padX=0;this.padY=0;
     const pads = typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : [];
     for (const gp of pads) {
       if (!gp) continue;
       const b = (i: number) => !!gp.buttons[i]?.pressed;
       const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0;
+      if(Math.hypot(ax,ay)>.14){this.padX=ax;this.padY=ay;}
       if (ax < -0.4 || b(14)) this.pad.add("left");
       if (ax > 0.4 || b(15)) this.pad.add("right");
       if (ay < -0.5 || b(12)) this.pad.add("up");

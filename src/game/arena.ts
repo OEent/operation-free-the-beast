@@ -259,8 +259,7 @@ export class ArenaEngine {
     if(p.beastTime>0)p.beastTime=Math.max(0,p.beastTime-dt);
     if(I.pressed("dash")){p.dash=.24;p.inv=Math.max(p.inv,.28);this.burst(p.x,p.y-25,"#b1e7ff",10,90)}
     const speed=p.beastTime>0?[260,225,245,180][this.beastForm]:200;
-    const xs=(I.down("right")?1:0)-(I.down("left")?1:0),ys=(I.down("down")?1:0)-(I.down("up")?1:0);
-    const len=Math.hypot(xs,ys)||1;let dx=xs/len,dy=ys/len;if(dx)p.face=dx>0?1:-1;
+    const axes=I.axes();let dx=axes.x,dy=axes.y;if(Math.abs(dx)>.12)p.face=dx>0?1:-1;
     const targetMotion=Math.min(1,Math.hypot(dx,dy));
     // Smooth acceleration/deceleration of body language, with normalized gait
     // driven by locomotion rather than a disconnected global animation clock.
