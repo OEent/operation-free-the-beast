@@ -215,31 +215,106 @@ export function drawRebel(g: G, p: PoseP) {
   }
 }
 export function drawBeast(g: G, p: PoseP) {
-  const moving = p.run > 0.1;
-  const ph = p.t * 12;
-  const bob = moving && !p.air ? Math.abs(Math.sin(ph)) * 2 : Math.sin(p.t * 4);
-  const la = moving ? Math.sin(ph) * 4 : 0;
-  const fur = p.hurt ? "#ffffff" : "#2a1818", fur2 = p.hurt ? "#ffe0e0" : "#4a2620";
-  const fl = (k: number) => (Math.sin(p.t * 20 + k) > 0 ? "#ffcc33" : "#ff6a1a");
-  // tail of fire
-  for (let k = 0; k < 4; k++) px(g, -16 - k * 3, -20 - bob + Math.sin(p.t * 12 + k) * 2, 4, 3, k % 2 ? "#ff6a1a" : "#ffaa33");
-  // legs
-  px(g, -9 + la, -10, 6, 10, fur); px(g, -10 + la, -2, 7, 2, "#140c0c");
-  px(g, 3 - la, -10, 6, 10, fur2); px(g, 3 - la, -2, 8, 2, "#140c0c"); px(g, 9 - la, -2, 2, 2, "#ffe0a0");
-  // torso hunched
-  px(g, -11, -24 - bob, 22, 15, fur); px(g, -11, -24 - bob, 22, 3, fur2);
-  px(g, -4, -20 - bob, 10, 6, "#5a2a20"); px(g, -2, -18 - bob, 5, 2, "#ff8a2a");
-  // mane flames
-  for (let k = 0; k < 6; k++) px(g, -10 + k * 3, -30 - bob - (k % 2) * 3 + Math.sin(p.t * 16 + k) * 1.5, 3, 7, fl(k));
-  // head
-  px(g, 5, -29 - bob, 10, 9, fur); px(g, 13, -26 - bob, 6, 5, fur2);
-  px(g, 6, -32 - bob, 3, 4, fur); px(g, 10, -32 - bob, 3, 3, fur2);
-  px(g, 10, -27 - bob, 3, 2, "#5ff6ff"); px(g, 12, -27 - bob, 1, 1, "#ffffff");
-  px(g, 14, -22 - bob, 5, 2, "#1a0808"); px(g, 15, -22 - bob, 1, 2, "#ffffff"); px(g, 17, -22 - bob, 1, 2, "#ffffff");
-  // arm + claws
-  const reach = p.attack > 0 ? 8 : 0;
-  px(g, 6, -18 - bob, 7 + reach, 5, fur2);
-  px(g, 12 + reach, -19 - bob, 2, 3, "#ffe0a0"); px(g, 14 + reach, -17 - bob, 2, 3, "#ffe0a0"); px(g, 12 + reach, -14 - bob, 2, 3, "#ffe0a0");
+  // Infernal armored direwolf — original path-drawn mythic beast with layered
+  // silhouette, runic armor, animated ember mane, bone horns and claw swipes.
+  const phase = p.t * 11;
+  const bob = p.air ? -2 : Math.sin(phase) * (p.run > 0.1 ? 1.8 : 0.75);
+  const fur = p.hurt ? "#fff3ea" : "#23151d";
+  const shadow = p.hurt ? "#ffdbd0" : "#110c17";
+  const armor = p.hurt ? "#fff2ea" : "#45394e";
+  const steel = p.hurt ? "#ffffff" : "#766b7e";
+  const flame = (k: number) => Math.sin(p.t * 17 + k) > 0 ? "#ffda48" : "#ff6320";
+  g.save(); g.translate(0, bob);
+  // Giant whipping tail: layered flame ribbons, fading toward tip.
+  for (let layer = 0; layer < 3; layer++) {
+    g.strokeStyle = ["#64202a", "#e34a20", "#ffce40"][layer]!;
+    g.lineWidth = 7 - layer * 2;
+    g.lineCap = "round"; g.beginPath();
+    g.moveTo(-9, -15); g.bezierCurveTo(-24, -20 + Math.sin(p.t * 9) * 3,
+      -25, -38 + Math.sin(p.t * 10) * 5, -37, -34 + Math.sin(p.t * 9) * 6);
+    g.stroke();
+  }
+  for (let k = 0; k < 5; k++) {
+    px(g, -36 - k * 2, -38 + Math.sin(p.t * 12 + k) * 4, 3, 3, flame(k));
+  }
+  // Muscular digitigrade legs and bone-toed talons.
+  for (const [x, offset] of [[-12, Math.sin(phase) * (p.run > 0.1 ? 3 : 0)], [6, -Math.sin(phase) * (p.run > 0.1 ? 3 : 0)]]) {
+    const yy = Number(offset);
+    g.fillStyle = shadow;
+    g.beginPath();g.moveTo(Number(x) - 3,-15);g.lineTo(Number(x) + 8,-13);
+    g.lineTo(Number(x) + 4,-5 + yy);g.lineTo(Number(x) + 9,0);g.lineTo(Number(x) - 6,0);
+    g.lineTo(Number(x) - 9,-6 + yy);g.fill();
+    px(g,Number(x)-7,-7+yy,14,4,fur);
+    for (let j = 0; j < 3; j++) {
+      g.fillStyle="#f8d9a6";g.beginPath();
+      g.moveTo(Number(x)-6+j*5,-2);g.lineTo(Number(x)-5+j*5,3);
+      g.lineTo(Number(x)-3+j*5,-2);g.fill();
+    }
+  }
+  // Bristling mane beneath broad segmented steel armor.
+  for (let k = 0; k < 13; k++) {
+    const x = -17 + k * 2.7;
+    const h = 9 + (k % 4) * 3 + Math.sin(p.t * 18 + k) * 3;
+    g.fillStyle = k%3===0 ? "#ffdb51" : k%2 ? "#f55b24" : "#9a2431";
+    g.beginPath();g.moveTo(x,-20);g.lineTo(x+2,-30-h);g.lineTo(x+5,-19);g.closePath();g.fill();
+  }
+  g.fillStyle=fur;g.beginPath();g.moveTo(-19,-11);g.lineTo(-23,-28);
+  g.quadraticCurveTo(-6,-40,15,-29);g.lineTo(17,-12);g.lineTo(6,-5);g.lineTo(-16,-8);g.fill();
+  // Rib plate with concentric scored metal / runes.
+  g.fillStyle=armor;g.beginPath();g.moveTo(-13,-27);g.lineTo(7,-32);g.lineTo(14,-25);
+  g.lineTo(9,-12);g.lineTo(-11,-13);g.closePath();g.fill();
+  g.fillStyle=shadow;g.beginPath();g.moveTo(-7,-25);g.lineTo(8,-28);g.lineTo(7,-18);g.lineTo(-8,-17);g.fill();
+  g.strokeStyle=steel;g.lineWidth=1.3;g.beginPath();g.moveTo(-13,-27);g.lineTo(7,-32);
+  g.lineTo(14,-25);g.lineTo(9,-12);g.stroke();
+  for(let k=0;k<4;k++){
+    const runeX=-6+k*4;px(g,runeX,-23+(k%2)*2,2,5,k%2?"#ffdb51":"#ff8a24");
+    px(g,runeX-1,-21+(k%2)*2,4,1,"#fff3aa");
+  }
+  // Huge swept shoulder spikes.
+  for (let k=0;k<3;k++) {
+    g.fillStyle=k===1?steel:armor;g.beginPath();
+    g.moveTo(-16+k*7,-23);g.lineTo(-19+k*8,-38-(k%2)*7);
+    g.lineTo(-9+k*7,-26);g.fill();
+  }
+  // Jaw, tapered muzzle, skull, fiery brow and two enormous blackened horns.
+  g.fillStyle=shadow;g.beginPath();g.moveTo(6,-36);g.lineTo(19,-35);
+  g.lineTo(23,-27);g.lineTo(33,-25);g.lineTo(31,-19);g.lineTo(19,-17);
+  g.lineTo(10,-22);g.closePath();g.fill();
+  g.fillStyle=fur;g.beginPath();g.moveTo(10,-35);g.lineTo(21,-32);
+  g.lineTo(25,-25);g.lineTo(35,-25);g.lineTo(31,-21);g.lineTo(20,-22);
+  g.lineTo(12,-25);g.fill();
+  g.fillStyle="#f6c88e";for(let k=0;k<4;k++){
+    g.beginPath();g.moveTo(22+k*3,-21);g.lineTo(24+k*3,-17);g.lineTo(26+k*3,-21);g.fill();
+  }
+  for (const [x,h] of [[10,19],[20,13]]) {
+    g.fillStyle=steel;g.beginPath();g.moveTo(Number(x)-3,-34);
+    g.quadraticCurveTo(Number(x)-11,-47,Number(x)-3,-37-h);
+    g.quadraticCurveTo(Number(x)+6,-44,Number(x)+7,-34);g.fill();
+    g.strokeStyle="#221b2a";g.lineWidth=1;g.stroke();
+  }
+  // Blazing eyes, nostrils and an occult forehead sigil.
+  px(g,18,-30,5,3,"#ff4b1a");px(g,20,-30,3,2,"#fff8a8");
+  px(g,31,-25,3,2,"#ea7a35");
+  px(g,13,-38,4,2,"#e5a83e");px(g,14,-40,2,6,"#ffdb5a");
+  // Oversized gauntlet and three luminous slashing claws.
+  const reach=p.attack>0?13:0;
+  g.fillStyle=armor;g.beginPath();g.moveTo(5,-20);g.lineTo(19+reach,-19);
+  g.lineTo(25+reach,-12);g.lineTo(20+reach,-7);g.lineTo(5,-13);g.fill();
+  g.strokeStyle=steel;g.lineWidth=2;g.beginPath();g.moveTo(7,-17);g.lineTo(21+reach,-15);g.stroke();
+  for(let k=0;k<3;k++){
+    g.fillStyle="#ffcf7a";g.beginPath();g.moveTo(21+reach,-13+k*3);
+    g.lineTo(30+reach,-17+k*3);g.lineTo(27+reach,-10+k*3);g.closePath();g.fill();
+  }
+  // Embers and magic flicker.
+  for(let k=0;k<9;k++){
+    const t=p.t*(6+k*.2)+k*19;
+    px(g,-18+k*5+Math.sin(t)*3,-39-(t%16),k%3===0?2:1,2,flame(k));
+  }
+  if (p.shooting) {
+    g.fillStyle="#fff2a0";g.beginPath();g.arc(36,-23,5+Math.sin(p.t*50)*2,0,Math.PI*2);g.fill();
+    g.strokeStyle="#ff6320";g.lineWidth=3;g.beginPath();g.moveTo(33,-23);g.lineTo(52,-23);g.stroke();
+  }
+  g.restore();
 }
 export function drawSoldier(g: G, t: number, moving: boolean, aim: boolean, flash: boolean, heavy: boolean) {
   const ph = t * 10, la = moving ? Math.sin(ph) * 3 : 0;
