@@ -248,6 +248,9 @@ export class ArenaEngine {
       this.tell("BEAST ROULETTE: "+FORMS[this.beastForm]+"!",3.5);this.sound(64,.75)
     }
     if(I.pressed("melee"))this.attack();
+    // Autoflow: holding the attack button queues the next hit once the blade
+    // is halfway through its swing (feels better on mobile touch controls).
+    if(I.down("melee")&&p.attack>0&&p.attack<.19)this.queuedSlash=true;
     if(I.down("shoot"))this.fire();
     if(I.pressed("special"))this.special();
     if(I.pressed("jump")&&p.vz===0){p.vz=440;this.sound(390,.085,"triangle")}

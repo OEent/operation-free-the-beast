@@ -98,6 +98,7 @@ const animation=await page.evaluate(async()=>{
  const slowed=e.motion<.2;
  e.player.attack=0;e.input.press("melee");e.input.poll();e.update(1/60);e.input.endStep();e.input.release("melee");
  const attack=e.player.attack>0&&e.player.attackChain===1;
+ e.input.poll();e.input.endStep(); // release between individual taps
  e.player.attack=.15;e.input.press("melee");e.input.poll();e.update(1/60);e.input.endStep();
  const buffered=e.queuedSlash;
  e.input.release("melee");e.input.poll();
