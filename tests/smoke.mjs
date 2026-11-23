@@ -111,4 +111,22 @@ const animation=await page.evaluate(async()=>{
 });
 if(Object.values(animation).some(v=>!v))throw Error("Animation input regression: "+JSON.stringify(animation));
 console.log("PASS — movement-driven run cycle, deceleration, slash combo buffer, dash animation state",animation);
+// Check true analog speed and diagonal normalization in the engine.
+const joystick=await page.evaluate(async()=>{
+ const {ArenaEngine}=await import("/src/game/arena.ts");
+ const {loadSettings}=await import("/src/game/storage.ts");
+ function simulate(x,y){
+  const e=new ArenaEngine(document.createElement("canvas"),{standalone:true,settings:loadSettings()});
+  e.newGame();e.waveIndex=9;e.gate=3;e.player.x=1000;e.player.y=398;
+  e.input.setAnalog(x,y);e.input.poll();
+  const start={x:e.player.x,y:e.player.y};
+  for(let k=0;k<20;k++){e.update(1/60);e.input.endStep();e.input.poll()}
+  const dist=Math.hypot(e.player.x-start.x,e.player.y-start.y);
+  e.destroy();return dist;
+ }
+ const slow=simulate(.27,0),fast=simulate(1,0),diagonal=simulate(.707,.707);
+ return {slow,fast,diagonal,ok:slow>2&&slow<fast*.48&&diagonal<fast*1.14};
+});
+if(!joystick.ok)throw Error("Analog stick regression "+JSON.stringify(joystick));
+console.log("PASS — analog displacement proportional speed, diagonal movement and normalization",joystick);
 await browser.close();
