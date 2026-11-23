@@ -283,7 +283,10 @@ function warrior(g:G,e:ArenaEngine,time:number) {
 
 function beastDraw(g:G,e:ArenaEngine,t:number){
  const p=e.player,bob=Math.sin(t*7)*2,flash=p.attack>0,blast=p.shoot>0;
- g.save();g.translate(0,bob);
+ const locomotion=e.motion,step=Math.sin(e.gait),landing=p.z>0;
+ g.save();g.translate(0,bob-Math.abs(step)*locomotion*6);
+ if(p.dash>0)g.rotate(-.10);
+ if(landing)g.rotate(-.06);
  const fur=(a:string)=>a;
  if(e.beastForm===0){
   // INFERNO HOUND — low-slung six-foot hellhound, four paws, molten chest,
@@ -292,7 +295,7 @@ function beastDraw(g:G,e:ArenaEngine,t:number){
   line(g,[-37,-40,-77,-53+Math.sin(t*9)*7,-104,-81+Math.sin(t*8)*10],"#54242a",20);
   line(g,[-40,-40,-76,-58+Math.sin(t*9)*8,-107,-85+Math.sin(t*8)*9],"#ff762b",9);
   for(let leg=0;leg<4;leg++){
-   const x=-43+leg*29,m=Math.sin(t*10+leg*2.3)*4;
+   const x=-43+leg*29,m=Math.sin(e.gait+leg*2.3)*7*locomotion;
    poly(g,[x-11,-42,x+5,-42,x+12,-16+m,x+4,0,x-12,0,x-17,-13+m],"#291e2d");
    poly(g,[x-12,-39,x+5,-39,x+10,-17+m,x-6,-19+m],"#653c35");
    for(let k=0;k<3;k++)poly(g,[x-14+k*7,-2,x-11+k*7,8,x-8+k*7,-2],"#fff0c7");
@@ -317,7 +320,7 @@ function beastDraw(g:G,e:ArenaEngine,t:number){
   line(g,[-31,-62,-90,-94+Math.sin(t*5)*7,-119,-67],"#326076",19);
   poly(g,[-116,-69,-133,-73,-121,-86,-140,-93,-105,-84],"#a1f3ff");
   for(const side of [-1,1]){
-   const w=Math.sin(t*6)*13;
+   const w=Math.sin(t*4)*7+Math.sin(e.gait*.8)*19*locomotion;
    poly(g,[-14,-89,side*71,-205+w,side*118,-155+w,side*108,-61,side*44,-79],side===1?"#2c7285":"#23475c");
    poly(g,[-5,-92,side*65,-184+w,side*94,-139+w,side*89,-88,side*28,-82],"#3e9aab");
    for(let k=1;k<5;k++){const tx=side*(30+k*17),ty=-99-k*16+w;line(g,[0,-89,tx,ty],"#83d7e0",2)}
@@ -348,7 +351,7 @@ function beastDraw(g:G,e:ArenaEngine,t:number){
  }else if(e.beastForm===2){
   // MOONFANG — bipedal dire werewolf, oversized furred shoulders and
   // swept-back ears, humanoid claws and a distinct wolf's muzzle.
-  g.scale(1.23,1.23);glow(g,0,-95,94,"#c8b2ff",.25);
+  g.scale(1.23,1.23);g.rotate(step*locomotion*.045);glow(g,0,-95,94,"#c8b2ff",.25);
   for(let leg of [-1,1]){
    const x=leg*20;
    poly(g,[x-15,-70,x+11,-71,x+20,-28,x+8,-17,x+17,0,x-20,0,x-25,-13],"#2c2a42");
@@ -382,7 +385,7 @@ function beastDraw(g:G,e:ArenaEngine,t:number){
  }else{
   // ARCANE TITAN — reptilian kaiju silhouette, huge dorsal spines,
   // upright thick tail, claws, dinosaur head, and atomic-violet mouth beam.
-  g.scale(1.42,1.42);glow(g,0,-93,122,"#c565ff",.3);
+  g.scale(1.42,1.42);g.rotate(step*locomotion*.028);glow(g,0,-93,122,"#c565ff",.3);
   line(g,[-31,-42,-87,-26+Math.sin(t*4)*7,-137,-56+Math.sin(t*4)*10],"#3a274e",33);
   line(g,[-35,-44,-90,-30+Math.sin(t*4)*7,-126,-54+Math.sin(t*4)*10],"#745080",13);
   for(let leg of [-1,1]){
