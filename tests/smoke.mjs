@@ -129,4 +129,44 @@ const joystick=await page.evaluate(async()=>{
 });
 if(!joystick.ok)throw Error("Analog stick regression "+JSON.stringify(joystick));
 console.log("PASS — analog displacement proportional speed, diagonal movement and normalization",joystick);
+// Ensure all four beast illustrations decode as real image assets in Chromium.
+const beastArt=await page.evaluate(async()=>{
+ const {beasts}=await import("/src/game/beast-illustrations.ts");
+ await Promise.all(beasts.map(img=>img.decode()));
+ const sizes=beasts.map(img=>[img.naturalWidth,img.naturalHeight]);
+ const cv=document.createElement("canvas");cv.width=340;cv.height=260;
+ const g=cv.getContext("2d");g.drawImage(beasts[1],0,0,340,260);
+ const pixels=g.getImageData(0,0,340,260).data;
+ let opaque=0;for(let k=3;k<pixels.length;k+=4)if(pixels[k]>50)opaque++;
+ return {sizes,opaque};
+});
+if(beastArt.sizes.length!==4||beastArt.sizes.some(([w,h])=>w<50||h<50)||beastArt.opaque<3000)
+ throw Error("Detailed beast assets failed to decode/draw: "+JSON.stringify(beastArt));
+console.log("PASS — four new beast image assets decode and visibly render",beastArt);
+// Emulate two-thumb mobile gameplay: one finger drives the floating analog
+// joystick while the other holds FIRE; button events must remain functional.
+const mobilePage=await browser.newPage({viewport:{width:960,height:540},hasTouch:true,isMobile:true});
+mobilePage.on("pageerror",error=>errors.push(error.message));
+await mobilePage.goto(url,{waitUntil:"networkidle"});
+const zone=mobilePage.getByLabel("Analog movement joystick");
+await zone.waitFor();
+const z=await zone.boundingBox();
+if(!z)throw Error("No mobile analog touch zone");
+await mobilePage.mouse.move(z.x+z.width*.35,z.y+z.height*.48);
+await mobilePage.mouse.down();
+await mobilePage.mouse.move(z.x+z.width*.7,z.y+z.height*.75,{steps:4});
+const analogOffset=await mobilePage.evaluate(()=>{
+ const layer=document.querySelector('[aria-label="Analog movement joystick"]');
+ return layer?.children[1]?.style.transform||"";
+});
+await mobilePage.mouse.up();
+const resetOffset=await mobilePage.evaluate(()=>{
+ const layer=document.querySelector('[aria-label="Analog movement joystick"]');
+ return layer?.children[1]?.style.transform||"";
+});
+if(!analogOffset.includes("calc(")||resetOffset!=="translate(-50%, -50%)"&&resetOffset!=="translate(-50%,-50%)")
+ throw Error("Touch joystick did not follow/reset: "+analogOffset+" / "+resetOffset);
+if(errors.length)throw Error("Mobile runtime error(s): "+errors.join(" | "));
+console.log("PASS — analog joystick mobile touch drag and automatic centering",analogOffset);
+await mobilePage.close();
 await browser.close();
