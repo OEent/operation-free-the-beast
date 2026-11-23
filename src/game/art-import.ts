@@ -1,3 +1,4 @@
+import { unzipSync, type Unzipped } from "fflate";
 import { beasts } from "./beast-illustrations";
 
 const LABELS=["Inferno Hound","Storm Drake","Moonfang Werebeast","Arcane Titan"];
@@ -64,7 +65,7 @@ export async function restoreBeastArt(){
 }
 export function installBeastArtPicker(isMenu:()=>boolean){
   const input=document.createElement("input");input.type="file";
-  input.multiple=true;input.accept="image/png,image/webp,image/jpeg";
+  input.multiple=true;input.accept=".zip,application/zip,image/png,image/webp,image/jpeg";
   input.style.display="none";document.body.appendChild(input);
   const panel=document.createElement("div");
   panel.setAttribute("aria-label","HD Beast Art importer");
@@ -81,7 +82,7 @@ export function installBeastArtPicker(isMenu:()=>boolean){
     boxShadow:"0 0 12px #55baff66",font:"bold 11px system-ui",cursor:"pointer",
   });
   button.addEventListener("click",()=>{
-    alert("Select the 4 PNG or WebP beast files from the IRONFANG art pack. The game remembers them on this device. Names should include inferno, storm, moonfang, or titan.");
+    alert("Select the IRONFANG beast-art ZIP file, or choose the four PNG/WebP files directly. The game saves the images on this device—nothing is uploaded.");
     input.click();
   });
   const reset=document.createElement("button");reset.type="button";reset.textContent="RESET ART";
@@ -94,19 +95,36 @@ export function installBeastArtPicker(isMenu:()=>boolean){
   const msg=document.createElement("span");msg.setAttribute("role","status");msg.style.maxWidth="170px";
   panel.append(button,reset,msg);document.body.appendChild(panel);
   input.addEventListener("change",async()=>{
-    const files=Array.from(input.files??[]);
-    let count=0;
-    for(const file of files){
-      const idx=FILE_TESTS.findIndex(test=>test.test(file.name));
-      if(idx<0||!file.type.startsWith("image/"))continue;
-      if(file.size>15*1024*1024){msg.textContent="File too large: "+file.name;continue}
-      try{
-        await swapImage(idx,file);await put(String(idx),file);count++;
-      }catch(err){console.warn("Image load failed",file.name,err);msg.textContent="Couldn't read "+file.name}
+    const inputFiles=Array.from(input.files??[]);
+    const extracted:{name:string;blob:Blob}[]=[];
+    for(const file of inputFiles){
+      if(file.name.toLowerCase().endsWith(".zip")){
+        if(file.size>25*1024*1024){msg.textContent="ZIP too large";continue}
+        try{
+          const contents:Unzipped=unzipSync(new Uint8Array(await file.arrayBuffer()),{
+            filter:(entry)=>entry.originalSize<15*1024*1024&&
+              /\\.(png|jpg|jpeg|webp)$/i.test(entry.name)&&!entry.name.includes("__MACOSX")
+          });
+          for(const [name,bytes] of Object.entries(contents)){
+            extracted.push({name,blob:new Blob([new Uint8Array(bytes)],{
+              type:/\\.webp$/i.test(name)?"image/webp":/\\.jpe?g$/i.test(name)?"image/jpeg":"image/png"
+            })});
+          }
+        }catch(err){console.warn("Unreadable ZIP file",err);msg.textContent="ZIP import failed"}
+      }else if(file.type.startsWith("image/"))extracted.push({name:file.name,blob:file});
     }
-    if(count){msg.textContent=count+"/4 art skins loaded!";
+    let count=0;
+    for(const {name,blob} of extracted){
+      const idx=FILE_TESTS.findIndex(test=>test.test(name));
+      if(idx<0)continue;
+      if(blob.size>15*1024*1024){msg.textContent="Image too large";continue}
+      try{
+        await swapImage(idx,blob);await put(String(idx),blob);count++;
+      }catch(err){console.warn("Image load failed",name,err);msg.textContent="Couldn't read "+name}
+    }
+    if(count){msg.textContent=count+"/4 beast skins loaded!";
       setTimeout(()=>{msg.textContent=""},4500);
-    }else if(!msg.textContent)msg.textContent="Use files named inferno, storm, moonfang and titan.";
+    }else if(!msg.textContent)msg.textContent="Use the IRONFANG ZIP or 4 named images.";
     input.value="";
   });
   let lastVisibility="";
