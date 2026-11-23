@@ -101,7 +101,7 @@ if (mobile) {
     ev.preventDefault();activePointer=ev.pointerId;stickZone.setPointerCapture(ev.pointerId);
     centerX=ev.clientX;centerY=ev.clientY;location(centerX,centerY);
     base.style.opacity=".87";moveStick(centerX,centerY);
-    if(engine.state==="menu")engine.input.press("start");
+    if(engine.state==="menu"){engine.input.press("start");engine.input.release("start");}
   });
   stickZone.addEventListener("pointermove",ev=>{
     if(ev.pointerId!==activePointer)return;

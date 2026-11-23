@@ -19,7 +19,7 @@ export class Input {
   private padX = 0;
   private padY = 0;
   setAnalog(x:number,y:number) { const length=Math.hypot(x,y);this.analogX=Math.abs(x)<.035?0:x/Math.max(1,length);this.analogY=Math.abs(y)<.035?0:y/Math.max(1,length); }
-  axes(){const x=this.analogX||this.padX,y=this.analogY||this.padY;if(Math.hypot(x,y)>.04)return {x,y};const dx=(this.down('right')?1:0)-(this.down('left')?1:0),dy=(this.down('down')?1:0)-(this.down('up')?1:0);const length=Math.max(1,Math.hypot(dx,dy));return {x:dx/length,y:dy/length};}
+  axes(){if(Math.hypot(this.analogX,this.analogY)>.04)return {x:this.analogX,y:this.analogY};const x=this.padX,y=this.padY;if(Math.hypot(x,y)>.14)return {x,y};const dx=(this.down('right')?1:0)-(this.down('left')?1:0),dy=(this.down('down')?1:0)-(this.down('up')?1:0);const length=Math.max(1,Math.hypot(dx,dy));return {x:dx/length,y:dy/length};}
   private onDown = (e: KeyboardEvent) => {
     const a = KEYMAP[e.code];
     if (!a) return;
