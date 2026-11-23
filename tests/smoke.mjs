@@ -148,6 +148,21 @@ console.log("PASS — four new beast image assets decode and visibly render",bea
 const mobilePage=await browser.newPage({viewport:{width:960,height:540},hasTouch:true,isMobile:true});
 mobilePage.on("pageerror",error=>errors.push(error.message));
 await mobilePage.goto(url,{waitUntil:"networkidle"});
+const customArtPanel=mobilePage.getByLabel("HD Beast Art importer");
+await customArtPanel.waitFor();
+if(!await customArtPanel.isVisible())throw Error("Art import menu missing");
+const png=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==","base64");
+await mobilePage.locator('input[type="file"]').setInputFiles({name:"storm_drake.png",mimeType:"image/png",buffer:png});
+await mobilePage.waitForTimeout(200);
+const saved=await mobilePage.evaluate(()=>new Promise((resolve,reject)=>{
+ const req=indexedDB.open("ironfang-art-assets-v1");
+ req.onsuccess=()=>{
+  const q=req.result.transaction("beast-skins","readonly").objectStore("beast-skins").get("1");
+  q.onsuccess=()=>resolve(Boolean(q.result));q.onerror=()=>reject(q.error)
+ };req.onerror=()=>reject(req.error)
+}));
+if(!saved)throw Error("Custom HD image was not persisted locally");
+console.log("PASS — optional original-art import and persistence works offline");
 const zone=mobilePage.getByLabel("Analog movement joystick");
 await zone.waitFor();
 const z=await zone.boundingBox();
