@@ -45,6 +45,11 @@ export class Engine {
   boss: (Body & { hp: number; maxHp: number; state: string; st: number; t: number; flash: number; phase2: boolean; next: number; beamY: number; face: number; alive: boolean; dyingT: number }) | null = null;
   bossLocked = false; endT = 0; ann: { s: string; t: number }[] = []; annCool: Record<string, number> = {}; firstKill = false;
   stats = { kills: 0, time: 0 };
+  // All weapons are available from the start; performance unlocks their upgrades.
+  weaponIndex = 0;
+  weaponLevel = 1;
+  get weaponName() { return ["RIFLE", "STORM SMG", "SHOTGUN", "RAILGUN", "INFERNO", "ROCKET"][this.weaponIndex] ?? "RIFLE"; }
+
 
   constructor(canvas: HTMLCanvasElement, opts: EngineOpts) {
     this.canvas = canvas; this.ctx = canvas.getContext("2d")!; this.opts = opts; this.settings = opts.settings;
@@ -288,6 +293,18 @@ export class Engine {
 
   updatePlayer(dt: number, cols: Box[]) {
     const p = this.p, I = this.input;
+    if (I.pressed("nextWeapon") && !p.beast) {
+      this.weaponIndex = (this.weaponIndex + 1) % 6;
+      p.shootCool = 0; this.sfx("select");
+      this.ftext(p.x, p.y - 18, this.weaponName, "#ffe39a");
+    }
+    // Earn permanent weapon upgrades every 20 kills this run.
+    const earnedLevel = Math.min(3, 1 + Math.floor(this.stats.kills / 20));
+    if (earnedLevel > this.weaponLevel) {
+      this.weaponLevel = earnedLevel;
+      this.say("ARSENAL UPGRADED! Weapons now hit harder.", "upgrade" + earnedLevel, 0);
+      this.burst(p.x + p.w / 2, p.y + p.h / 2, 24, "#5ff6ff", 100, -30, 2, true);
+    }
     p.t += dt; p.shootFlash -= dt;
     if (p.deadT > 0) {
       p.deadT -= dt;
@@ -350,10 +367,28 @@ export class Engine {
         this.bullets.push({ x: mx, y: my, vx: aim.vx, vy: aim.vy, target: aim.target, homing: 8, r: 8, dmg: 7, owner: "p", life: 1.1, kind: "fire" });
         this.burst(mx, my, 8, "#ff8a2a", 130, 0, 3, true); this.sfx("ember");
       } else if (p.ammo > 0) {
-        p.shootCool = 0.12; p.ammo--; p.shootFlash = 0.06;
-        const aim = this.aimedVelocity(mx, my, p.face, 420);
-        this.bullets.push({ x: mx, y: my, vx: aim.vx, vy: aim.vy, target: aim.target, homing: 10, r: 3, dmg: 2, owner: "p", life: 1.0, kind: "bullet" });
-        this.lights.push({ x: mx, y: my, r: 40, c: "#ffcc66", a: 1 }); this.sfx("shoot");
+        const weapon = this.weaponIndex, level = this.weaponLevel;
+        const rates = [0.16, 0.07, 0.55, 0.8, 0.06, 0.65];
+        const costs = [1, 1, 3, 4, 1, 5];
+        const speeds = [420, 460, 370, 850, 250, 280];
+        const damages = [2, 1.2, 2.3, 9, 0.8, 8];
+        const count = weapon === 2 ? 5 + level * 2 : 1;
+        const cost = Math.min(p.ammo, costs[weapon] ?? 1);
+        p.shootCool = (rates[weapon] ?? 0.16) * (1 - (level - 1) * 0.09);
+        p.ammo -= cost; p.shootFlash = 0.08;
+        for (let k = 0; k < count; k++) {
+          const aim = this.aimedVelocity(mx, my, p.face, speeds[weapon] ?? 420);
+          const spread = weapon === 2 ? (k - (count - 1) / 2) * 0.10 : weapon === 1 ? (Math.random() - 0.5) * 0.06 : weapon === 4 ? (Math.random() - 0.5) * 0.17 : 0;
+          const cs = Math.cos(spread), sn = Math.sin(spread);
+          const vx = aim.vx * cs - aim.vy * sn, vy = aim.vx * sn + aim.vy * cs;
+          const kind: BKind = weapon === 4 ? "fire" : weapon === 5 ? "ember" : weapon === 3 ? "bullet" : "bullet";
+          const piercing = weapon === 3 ? new Set<object>() : undefined;
+          this.bullets.push({ x: mx, y: my, vx, vy, target: weapon === 2 ? null : aim.target, homing: weapon === 5 ? 11 : weapon === 3 ? 0 : 6,
+            r: weapon === 5 ? 6 : weapon === 4 ? 5 : weapon === 3 ? 3 : 2.5, dmg: (damages[weapon] ?? 2) * (1 + (level - 1) * .4),
+            owner: "p", life: weapon === 4 ? 0.24 : weapon === 3 ? 0.8 : 1.05, kind, ...(piercing ? { hits: piercing } : {}) });
+        }
+        if (weapon === 5) this.addShake(3);
+        this.lights.push({ x: mx, y: my, r: weapon === 5 ? 75 : 40, c: weapon === 4 || weapon === 5 ? "#ff6a1a" : "#ffcc66", a: 1 }); this.sfx(weapon === 4 || weapon === 5 ? "ember" : "shoot");
         this.parts.push({ x: p.x + p.w / 2, y: my, vx: -p.face * 40, vy: -80, life: 0.5, max: 0.5, c: "#e0b040", s: 1, grav: 600 });
       } else if (I.pressed("shoot")) { this.sfx("click"); this.ftext(p.x, p.y - 8, "NO AMMO", "#ff5a5a"); this.say("Out of rounds! Melee, or smash crates for ammo.", "noammo", 15); }
     }
@@ -891,7 +926,7 @@ export class Engine {
     const ready = p.energy >= 50;
     this.text(g, "EN", 36, 18, "#9ff8ff", 6); this.bar(g, 50, 18, 98, 5, p.energy / 100, ready && Math.floor(this.time * 4) % 2 ? "#ffffff" : "#3ae0f0", "#c0ffff");
     px(g, 99, 17, 1, 7, "#ffcc66");
-    this.text(g, p.beast ? "BEAST" : `AMMO ${p.ammo}`, 36, 28, p.beast ? "#ffaa33" : "#ffcc66", 6);
+    this.text(g, p.beast ? "BEAST" : `${this.weaponName} ${p.ammo} LV${this.weaponLevel}`, 36, 28, p.beast ? "#ffaa33" : "#ffcc66", 5);
     for (let i = 0; i < this.lives; i++) { px(g, 110 + i * 8, 28, 5, 5, "#ff6a1a"); px(g, 111 + i * 8, 29, 3, 3, "#ffcc66"); }
     if (ready && !p.beast) this.text(g, "E:BEAST!", 156, 18, Math.floor(this.time * 4) % 2 ? "#5ff6ff" : "#ffffff", 6);
     // score
@@ -948,7 +983,7 @@ export class Engine {
     this.text(g, "BEASTFIRE", W / 2, 106, "#5ff6ff", 16, "center");
     if (Math.floor(this.time * 2) % 2) this.text(g, "PRESS ENTER TO PLAY", W / 2, 160, "#ffffff", 8, "center");
     this.text(g, "WASD/ARROWS MOVE  SPACE JUMP  J MELEE  K SHOOT", W / 2, 200, "#c0b8e0", 6, "center");
-    this.text(g, "L SPECIAL  SHIFT DASH  E BEAST  P PAUSE", W / 2, 212, "#c0b8e0", 6, "center");
+    this.text(g, "Q SWAP GUN  L SPECIAL  SHIFT DASH  E BEAST  P PAUSE", W / 2, 212, "#c0b8e0", 6, "center");
     this.text(g, `HI SCORE ${topScore()}`, W / 2, 236, "#ffe080", 6, "center");
   }
   drawOverlay(g: G) {
