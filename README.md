@@ -1,3 +1,12 @@
+## IRONFANG 3.3 — Mobile thumbstick + illustrated beast art
+
+**Lovable is not used by this update.** GitHub is the source of truth, building the web game and Android test APK independently.
+
+- Mobile D-pad replaced with a floating analog joystick: touch anywhere in the lower-left movement region, drag in any direction, and let go to stop. Works while holding FIRE/SLASH with your other thumb. Magnitude controls speed, not merely direction; keyboard and physical gamepads still work.
+- Four smoother, newly drawn illustrative SVG beasts now replace the polygon-built monsters in the runtime: Inferno Hound (quadruped), Storm Drake (winged dragon), Moonfang (upright werewolf), Arcane Titan (kaiju). Their artwork is cached and animated with movement/special effects, and the original renderer remains a fallback.
+- The game's **LOAD HD BEAST ART** option is shown on the title and pause menus. Select the original high-detail beast PNG/WebP images (named `inferno_hound`, `storm_drake`, `moonfang_werebeast`, `arcane_titan`). These replace the built-in illustrations *inside gameplay* and save locally via IndexedDB for that device. Select all four together. RESET ART removes custom skins. No account, credits, or upload to a server is required.
+- The original detailed concept art is not bundled in GitHub yet. Until added to the repository as production assets, the built-in smooth SVG illustrations appear by default. Even custom still images only get modest motion; full walk/attack frame animations remain a separate future art pipeline.
+
 # IRONFANG: BEASTFIRE — ASCENSION (Version 3.0)
 
 Free-to-play arcade belt-scroller prototype with original hand-coded fantasy artwork, depth-lane movement, huge melee attacks, eight gun classes, challenge rewards, three combat arenas, and four transformative beast powers.
