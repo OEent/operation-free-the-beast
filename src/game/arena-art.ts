@@ -129,66 +129,158 @@ function soldier(g:G,e:ArenaEngine["enemies"][number],time:number){
  if(e.attacking>.1){glow(g,37,-38,20,boss?"#de80ff":"#ffb36a",.55);line(g,[32,-39,48,-42],boss?"#f0c3ff":"#ffcc7a",4)}
  g.restore();
 }
-function warrior(g:G,e:ArenaEngine,time:number){
- const p=e.player,beast=p.beastTime>0,form=e.beastForm;
- g.save();g.translate(p.x,p.y-p.z);g.scale(p.face,1);
- const bob=Math.sin(time*9)*1.5;
- ellipse(g,0,p.z-1,beast?37:18,beast?9:6,"#06081299");
- if(p.inv>0&&Math.floor(time*18)%2)g.globalAlpha=.7;
- if(p.shield>0){g.strokeStyle="#9df6ff";g.lineWidth=3;g.beginPath();g.ellipse(0,-45,beast?53:34,beast?78:52,0,0,Math.PI*2);g.stroke();glow(g,0,-48,65,"#5bdfff",.11)}
- if(beast){beastDraw(g,e,time);g.restore();return}
- // More dimensional than the previous tiny blocky protagonist: layered armored silhouette.
- const step=Math.sin(time*11)*(Math.abs((e.input.down("right")?1:0)-(e.input.down("left")?1:0))?4:1);
- // Unique protagonist: weathered azure storm-cloak, horned mask, rune-etched
- // sword and asymmetrical brass/cyan armor. Cloth moves separately from legs.
- const capeSway=Math.sin(time*7)*5;
- poly(g,[-10,-64,0,-78,-32,-76,-48+capeSway,-35,-36+capeSway,-6,-15,-17],"#162c48");
- poly(g,[-16,-66,-5,-75,-33,-66,-45+capeSway,-27,-33+capeSway,-10,-21,-25],"#285b77");
- line(g,[-28,-61,-43+capeSway,-31,-33+capeSway,-10],"#5be4ef",2);
- for(let k=0;k<4;k++)ellipse(g,-33+capeSway*.4+k*5,-16+Math.sin(time*9+k)*3,2,2,k%2?"#8aecff":"#f5b968");
- // Brushed brass shoulder emblem with electric-blue crystal inlay.
- poly(g,[-20,-67,-18,-77,-3,-78,0,-68,-12,-61],"#edbb6b");
- poly(g,[-17,-69,-14,-74,-6,-72,-9,-67],"#3ab5cc");
- poly(g,[7,-70,15,-77,25,-70,23,-59,13,-57],"#b6a2a1");
- line(g,[12,-75,24,-67,16,-59],"#efce89",2);
 
- for(const [x,d] of [[-8,step],[8,-step]]){
-  poly(g,[Number(x)-6,-24,Number(x)+5,-24,Number(x)+4+Number(d),-1,Number(x)-8+Number(d),-1],"#24283e");
-  rect(g,Number(x)-6+Number(d),-9,13,5,"#8391a8");
+function armoredLimb(g:G, x:number, y:number, angle:number, leg:boolean, glowing:string, elbow=0) {
+ g.save();g.translate(x,y);g.rotate(angle);
+ if(leg){
+   poly(g,[-10,0,10,-2,13,24,5,33,-11,30,-14,20],"#25354d");
+   poly(g,[-8,4,7,3,9,21,-6,25],"#7e899f");
+   line(g,[-8,12,8,13],"#dec18b",2);
+   g.translate(1,29);g.rotate(elbow);
+   poly(g,[-10,-3,9,-5,13,20,23,23,23,31,-18,31],"#253045");
+   poly(g,[-7,1,7,-1,9,18,-10,21],"#6a8c9e");
+   line(g,[-15,26,19,26],"#e7bb79",3);
+ }else{
+   poly(g,[-12,-7,10,-8,14,17,5,24,-15,19,-17,8],"#36435a");
+   poly(g,[-12,-5,9,-7,13,7,0,14,-14,9],"#b59577");
+   poly(g,[-14,-4,-4,-14,13,-9,15,2,2,9],"#d8af75");
+   g.translate(2,21);g.rotate(elbow);
+   poly(g,[-10,-3,9,-4,12,19,-9,21],"#2a3c54");
+   poly(g,[-7,-1,7,-2,10,15,-8,17],"#8496a7");
+   line(g,[-9,13,10,13],glowing,3);
+   poly(g,[-11,18,13,18,15,25,-11,26],"#c2a076");
  }
- poly(g,[-18,-58+bob,-2,-66+bob,14,-57+bob,20,-25,-18,-26],"#203044");
- poly(g,[-13,-56+bob,10,-56+bob,10,-28,-13,-28],"#627d8d");
- poly(g,[-6,-53+bob,4,-53+bob,9,-30,-8,-31],"#182234");
- line(g,[-3,-52,5,-37,-3,-29],"#6defff",3);
- poly(g,[-18,-56,-22,-65,-5,-70,-5,-54],"#a2b5bf");
- poly(g,[5,-55,12,-67,25,-60,20,-48],"#7b99a5");
- // Hood, faceplate and cyan eyes.
- poly(g,[-14,-70,-7,-85,10,-84,17,-69,7,-62,-9,-62],"#303747");
- poly(g,[-9,-77,12,-77,10,-64,-7,-65],"#a9b4b9");
- rect(g,-6,-72,17,4,"#091829");rect(g,3,-71,6,2,"#68faff");
- // Recognizable split horn silhouette and signature scar over one lens.
- poly(g,[-12,-79,-18,-96,-4,-85],"#b9c6d0");
- poly(g,[6,-83,15,-104,19,-80],"#b4a7b6");
- poly(g,[3,-75,7,-86,11,-74],"#ffcf79");
- rect(g,-14,-62,31,3,"#c69e63");
- // A glowing runestone fuels the bracer and signature sword.
- glow(g,19,-47,18,"#5ef9ff",.32);rect(g,14,-48,10,6,"#4ad8f0");
-
- line(g,[13,-42,29,-38,36,-37],"#31415a",6);
- // The gun silhouette changes with the currently equipped weapon.
- const rail=e.weapon===3,rocket=e.weapon===5,flame=e.weapon===4;
- line(g,[23,-39,rail?57:rocket?49:flame?45:39,-39],rocket?"#e9a96f":"#e4d7a8",rail?6:4);
- if(rail){rect(g,33,-45,25,3,"#6cf3ff");rect(g,51,-44,8,10,"#a4fbff")}
- if(rocket){poly(g,[25,-47,53,-47,64,-39,53,-30,25,-30],"#777883");rect(g,48,-43,7,9,"#ffc35d")}
- if(flame){rect(g,26,-47,18,8,"#aa5943");glow(g,43,-43,14,"#ffad41",.3)}
- if(e.weapon===2){poly(g,[27,-48,48,-46,52,-35,28,-35],"#b49376")}
- if(e.weapon===6||e.weapon===7){glow(g,45,-39,17,e.weapon===6?"#ba99ff":"#8bf6ff",.48)}
-
- if(p.attack>0){glow(g,64,-45,31,"#88ffff",.25);line(g,[24,-58,95,-64+Math.sin(time*50)*12],"#e4fcff",7);line(g,[33,-53,99,-55],"#5febff",2)}
- if(p.shoot>0){glow(g,39,-39,20,"#ffe0a0",.65);ellipse(g,39,-39,8,4,"#fff6c9")}
  g.restore();
 }
-// Every transformation uses its own original anatomy and combat silhouette.
+function warrior(g:G,e:ArenaEngine,time:number) {
+ const p=e.player,beast=p.beastTime>0;
+ const moving=e.motion>0.1, gait=e.gait, stride=Math.sin(gait), back=Math.cos(gait);
+ const swinging=p.attack>0, attackPhase=swinging?1-p.attack/.37:0;
+ const dash=p.dash>0,air=p.z>8, shooting=p.shoot>0;
+ const accelerate=Math.min(1,e.motion), bob=moving?Math.abs(stride)*2.6*accelerate:Math.sin(time*2.5)*.9;
+ g.save();
+ // Dust/trails and motion afterimages are gameplay-state driven, not static illustrations.
+ if(dash||e.motion>.8){
+   for(let k=0;k<(dash?4:2);k++){
+     const trailX=p.x-p.face*(16+k*(dash?17:9)),trailY=p.y-p.z-47;
+     g.save();g.globalAlpha=(dash?.17:.07)*(1-k*.18);
+     glow(g,trailX,trailY,30,"#5adcfb",.7);
+     line(g,[trailX-12,trailY-19,trailX+7,trailY-28],"#74edff",dash?6:2);
+     g.restore();
+   }
+ }
+ g.translate(p.x,p.y-p.z);g.scale(p.face,1);
+ ellipse(g,0,p.z-1,beast?38:20,beast?10:6,"#05061793");
+ if(p.inv>0&&Math.floor(time*17)%2)g.globalAlpha=.73;
+ if(p.shield>0){
+   g.strokeStyle="#78f5ff";g.lineWidth=3;g.beginPath();g.ellipse(0,-55,beast?65:41,beast?92:61,0,0,Math.PI*2);g.stroke();
+   for(let k=0;k<6;k++){const theta=time*2+k*Math.PI/3;glow(g,Math.cos(theta)*38,-55+Math.sin(theta)*55,14,"#69eaff",.4)}
+ }
+ if(beast){
+   beastDraw(g,e,time);g.restore();return;
+ }
+ const jumpLean=air?-.2:0, attackLean=swinging?.13:0;
+ const leaning=dash?-.4:jumpLean+attackLean+(moving?.06:0);
+ g.translate(0,-bob);g.rotate(leaning);
+ const cape=Math.sin(time*(moving?14:5))*5*(moving?1.2:.5)-e.motion*5;
+ // Silhouette: distinctive storm-blue split cape on the character's back.
+ for(let layer=0;layer<3;layer++){
+   const drift=cape*(layer+1)/3;
+   poly(g,[-13,-72,-25,-77,-50-drift,-60+layer*5,-65-drift*(1.3+layer*.12),-19+layer*4,
+      -45-drift,-3+layer*6,-20,-27],["#0e2544","#27617f","#46add5"][layer]!);
+ }
+ for(let k=0;k<5;k++)line(g,[-20-k*4,-52+k*6,-37-k*6-cape,-31+k*6],
+   k%2?"#40e1f7":"#7ec4de",1.4);
+ // Legs move independently with bend in running, braced stance on melee.
+ const lAngle=air?-.62:moving?stride*.6*accelerate:swinging?-.35:0;
+ const rAngle=air?.62:moving?-stride*.6*accelerate:swinging?.42:0;
+ armoredLimb(g,-10,-29,lAngle,true,"#74dfff",air?-.7:Math.max(0,stride)*-.33);
+ armoredLimb(g,11,-30,rAngle,true,"#74dfff",air?.6:Math.max(0,-stride)*-.33);
+ // Coat tails layered over animated knees.
+ poly(g,[-21,-53,19,-55,23,-21,5,-26,-12,-16,-25,-25],"#30283e");
+ poly(g,[-15,-52,-5,-55,-9,-21,-23,-13,-24,-25],"#59445c");
+ poly(g,[11,-51,22,-50,31,-20,13,-26],"#6d4769");
+ for(let k=0;k<4;k++)line(g,[-22+k*10,-38,-23+k*11,-20],"#d3a378",1);
+ // Main cuirass / sharp armor plates and glowing signature chest rune.
+ poly(g,[-23,-71,-8,-84,14,-79,27,-57,14,-31,-17,-33,-27,-52],"#192a44");
+ poly(g,[-18,-72,-8,-78,17,-75,21,-55,13,-39,-13,-38,-23,-56],"#637b93");
+ poly(g,[-11,-70,10,-73,16,-48,6,-38,-14,-47],"#1f344b");
+ for(let k=0;k<4;k++)poly(g,[-19+k*11,-47,-10+k*11,-43,-10+k*11,-39,-19+k*11,-43],"#b6a28c");
+ poly(g,[-5,-64,2,-74,10,-63,1,-48],"#eab97b");
+ glow(g,1,-62,23,"#51f6ff",.38);
+ poly(g,[-3,-64,1,-70,5,-63,1,-55],"#9efbff");
+ line(g,[-11,-80,9,-81,23,-67],"#edbd86",2.4);
+ // Back arm protects the chest while the dominant arm moves with attacks.
+ armoredLimb(g,-18,-70,moving?-stride*.25:-.1,false,"#52e9ff",.3);
+ // Distinct partially unmasked hero with one asymmetric horned mask and visible hair.
+ poly(g,[-16,-83,-11,-103,6,-110,19,-99,19,-81,7,-73,-11,-77],"#28243b");
+ for(let k=0;k<8;k++)poly(g,[-18+k*4,-98,-18+k*5,-112-(k%3)*5,(-18+k*4)+7,-98],
+   k%2?"#4a3661":"#231c38");
+ poly(g,[-13,-97,5,-106,18,-96,15,-84,0,-77,-14,-84],"#c5a38c");
+ poly(g,[-16,-94,-5,-108,3,-111,5,-91,-5,-82],"#d4b7a3");
+ poly(g,[-17,-99,-22,-122,-5,-104],"#f0d3a4");
+ poly(g,[7,-104,16,-126,18,-99],"#e6c89e");
+ poly(g,[-13,-100,-1,-111,8,-99,4,-89,-11,-86],"#34354e");
+ line(g,[-11,-95,2,-99],"#f5d7a8",2);
+ poly(g,[-13,-91,1,-96,4,-91,-9,-87],"#17283b");
+ rect(g,-10,-93,15,3,"#3de6ff");rect(g,7,-92,5,2,"#8ef5ff");
+ line(g,[8,-102,10,-95,8,-84],"#e7b66f",2);
+ // Shoulder plates and torn cowl.
+ poly(g,[-23,-78,-25,-88,-7,-91,0,-78,-9,-69],"#d5a671");
+ poly(g,[-19,-80,-16,-87,-8,-84,-11,-76],"#85ddf2");
+ poly(g,[8,-80,17,-89,30,-79,27,-67,15,-65],"#8e99af");
+ line(g,[13,-84,25,-78],"#edc68c",2.5);
+ poly(g,[-17,-84,3,-85,17,-80,4,-77,-10,-75],"#254e71");
+ // Two weapons: left-hand magic blade and right-hand modular gun.
+ const swingAngle=swinging?(-2.0+attackPhase*3.1):air?.2:moving?stride*.25:-.22;
+ armoredLimb(g,20,-72,shooting?-.35:swinging?swingAngle:Math.sin(gait+1)*.22,false,"#8bf8ff",-.18);
+ // A sword is clearly attached to the dominant arm and traces a broad slash arc.
+ g.save();g.translate(28,-44);g.rotate(swinging?swingAngle-.26:air?-.8:1.0);
+ rect(g,-4,-2,10,7,"#d7a36c");
+ poly(g,[1,1,3,-13,8,-43,12,-55,16,-40,15,-8,8,2],"#d7eff5");
+ poly(g,[8,-37,12,-51,12,-16,9,-7],"#34e8ff");
+ line(g,[0,-12,17,-10],"#f6c67e",4);
+ glow(g,11,-25,19,"#55dfff",swinging?.44:.14);
+ g.restore();
+ // Gun arm carries the currently equipped gun and recoils on every shot.
+ g.save();g.translate(19,-59);
+ const recoil=shooting?5*Math.sin(time*42):0;
+ g.rotate(swinging?-.25:shooting?-.07:0);
+ poly(g,[0,-9,27-recoil,-7,32-recoil,1,23-recoil,6,-1,5],"#364358");
+ poly(g,[4,-7,28-recoil,-7,29-recoil,-3,5,-3],"#e5b779");
+ const barrel=e.weapon===3?54:e.weapon===5?52:e.weapon===2?42:40;
+ rect(g,18-recoil,-5,barrel-15,5,e.weapon===4?"#b85b3e":"#a5b4be");
+ rect(g,barrel-9-recoil,-7,9,9,"#15283f");
+ rect(g,barrel-6-recoil,-5,7,4,e.weapon===4?"#ffa451":"#5bebff");
+ if(e.weapon===5){poly(g,[18,-10,44,-10,56,-3,45,4,18,4],"#7d747e");rect(g,48,-6,6,6,"#fff2a8")}
+ if(e.weapon===3){line(g,[19,-9,barrel+1,-9],"#6eebff",3);glow(g,barrel,-3,15,"#5ee6ff",.45)}
+ if(e.weapon===2){poly(g,[20,-8,48,-7,52,0,19,2],"#7b7f90")}
+ if(e.weapon===4){glow(g,barrel,-3,18,"#ff7d35",.5)}
+ if(shooting){glow(g,barrel,-3,38,"#ffdf82",.75);poly(g,[barrel,-10,barrel+26,-4,barrel+14,4,barrel+27,14,barrel,6],"#ffd777")}
+ g.restore();
+ // Strike animation: winding silhouette, distinct impact frame and follow-through.
+ if(swinging){
+   const progress=Math.min(1,Math.max(0,attackPhase));
+   const center=-1.2+progress*2.7;
+   g.save();g.globalCompositeOperation="screen";
+   for(let k=0;k<4;k++){
+     const rad=81+k*8;
+     g.beginPath();g.arc(15,-66,rad,center-.35,center+.5);
+     g.lineWidth=9-k*2;g.strokeStyle=["#4af9ff","#94fbff","#f2ffff","#1ca6d0"][k]!;
+     g.globalAlpha=1-k*.2;g.stroke();
+   }
+   for(let k=0;k<7;k++){
+     const an=center-.2+k*.11,x=15+Math.cos(an)*90,y=-66+Math.sin(an)*90;
+     ellipse(g,x,y,3,3,k%2?"#fdfcff":"#68eaff");
+   }
+   g.restore();
+ }
+ if(air){
+   for(let k=0;k<4;k++)line(g,[-34-k*4,-15+k*8,-51-k*4,-11+k*8],"#6fdaf480",2);
+ }
+ g.restore();
+}
+
 function beastDraw(g:G,e:ArenaEngine,t:number){
  const p=e.player,bob=Math.sin(t*7)*2,flash=p.attack>0,blast=p.shoot>0;
  g.save();g.translate(0,bob);
