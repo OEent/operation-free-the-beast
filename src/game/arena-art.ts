@@ -236,7 +236,7 @@ function overlay(g:G,e:ArenaEngine){
   txt(g,"PRESS ENTER / START TO PLAY",W/2,332,25,"#fff9d5","center");
   txt(g,"WASD MOVE IN ALL FOUR DIRECTIONS  •  J MELEE  •  K FIRE  •  Q CHANGE GUN",W/2,393,14,"#bbd1e5","center");
   txt(g,"SPACE JUMP  •  E BEAST  •  L MAGIC  •  SHIFT DASH",W/2,418,14,"#bbd1e5","center");
-  txt(g,"TIP: HOLD L AND TAP UP TO CHOOSE A BEAST BEFORE TRANSFORMING",W/2,448,12,"#e6c2a9","center");
+  txt(g,"TIP: PRESS B (OR FORM ON MOBILE) TO CYCLE BETWEEN FOUR BEASTS",W/2,448,12,"#e6c2a9","center");
  }else{
   txt(g,e.state==="pause"?"PAUSED":e.state==="win"?"VICTORY! THE ROAD IS YOURS":"THE ROAD CLAIMS YOU",W/2,231,40,e.state==="win"?"#fff2a6":"#ffbb82","center");
   txt(g,"SCORE "+e.score.toLocaleString()+"  ·  KILLS "+e.kills,W/2,278,20,"#d4ecff","center");
@@ -251,6 +251,14 @@ export function renderArena(e:ArenaEngine,g:G){
  const entities:{y:number;draw:()=>void}[]=[];
  for(const c of e.crates)if(c.alive&&c.x>e.cam-90&&c.x<e.cam+W+90)entities.push({y:c.y,draw:()=>crateDraw(g,c,e.time)});
  for(const d of e.drops)if(d.x>e.cam-90&&d.x<e.cam+W+90)entities.push({y:d.y,draw:()=>pickup(g,d,e.time)});
+ for(const t of e.targets)if(t.alive&&t.x>e.cam-90&&t.x<e.cam+W+90)entities.push({y:t.y,draw:()=>{
+   const bob=Math.sin(e.time*4+t.glow)*8,cy=t.y-49+bob;
+   glow(g,t.x,cy,43,"#64ebff",.46);ellipse(g,t.x,t.y,20,4,"#050c1b99");
+   g.save();g.translate(t.x,cy);g.rotate(e.time*.7+t.glow);
+   for(let k=0;k<4;k++){g.rotate(Math.PI/2);poly(g,[-6,-25,0,-35,6,-25,5,-7,-5,-7],"#8ce5ff")}
+   g.restore();ellipse(g,t.x,cy,13,13,"#2c76a2");ellipse(g,t.x,cy,7,7,"#fff6bc");
+   txt(g,"HIT",t.x,cy-38,10,"#bcf7ff","center");
+ }});
  for(const en of e.enemies)if(en.alive&&en.x>e.cam-90&&en.x<e.cam+W+90)entities.push({y:en.y,draw:()=>soldier(g,en,e.time)});
  entities.push({y:e.player.y,draw:()=>warrior(g,e,e.time)});
  entities.sort((a,b)=>a.y-b.y);
@@ -284,7 +292,7 @@ export function renderArena(e:ArenaEngine,g:G){
  if(e.combo>2)txt(g,e.combo+" HIT COMBO!",W-24,125,20,"#ffcc7b","right");
  if(e.annT>0){rect(g,255,109,450,35,"#131626de");txt(g,e.announce,W/2,133,17,"#ffe3a8","center")}
  // Upgrade/selection hints
- txt(g,"Q: SWAP GUN   E: TRANSFORM   ↑ + L: NEXT BEAST",W/2,H-11,12,"#b6cce1","center");
+ txt(g,"Q: SWAP GUN   B / FORM: CHANGE BEAST   E: TRANSFORM",W/2,H-11,12,"#b6cce1","center");
  overlay(g,e);
  g.restore();
 }

@@ -22,6 +22,7 @@ if (mobile) {
     { action: "special", label: "BLAST", x: 75, y: 30 },
     { action: "transform", label: "BEAST", x: 87, y: 13 },
     { action: "nextWeapon", label: "GUN", x: 4, y: 20 },
+    { action: "nextBeast", label: "FORM", x: 13, y: 20 },
     { action: "start", label: "START", x: 44, y: 6 },
     { action: "pause", label: "Ⅱ", x: 95, y: 4 },
   ];

@@ -11,6 +11,7 @@ type Loot = "shield"|"heal"|"energy"|"ammo"|"weapon"|"fury";
 type V = {x:number;y:number};
 type Enemy = V & {id:number;kind:EnemyKind;hp:number;max:number;speed:number;cool:number;flash:number;stun:number;face:number;alive:boolean;attacking:number};
 type Crate = V & {hp:number;gold:boolean;alive:boolean;secret:boolean};
+type RuneTarget = V & {id:number;alive:boolean;glow:number};
 type Shot = V & {vx:number;vy:number;life:number;dmg:number;kind:number;friendly:boolean;radius:number;target?:Enemy;hits:Set<number>;pierce:boolean};
 type Particle = V & {vx:number;vy:number;life:number;max:number;size:number;color:string};
 type Drop = V & {kind:Loot;life:number};
@@ -33,7 +34,7 @@ export class ArenaEngine {
   settings:Settings;
   player:Player={x:100,y:410,hp:160,maxHp:160,energy:60,ammo:240,shield:0,beastTime:0,face:1,z:0,vz:0,inv:0,attack:0,attackId:0,attackChain:0,shoot:0,dash:0,special:0,stagger:0};
   cam=0;world=6100;time=0;last=0;acc=0;raf=0;shake=0;score=0;combo=0;comboT=0;kills=0;
-  enemies:Enemy[]=[];crates:Crate[]=[];shots:Shot[]=[];particles:Particle[]=[];drops:Drop[]=[];numbers:TextFX[]=[];
+  enemies:Enemy[]=[];crates:Crate[]=[];targets:RuneTarget[]=[];shots:Shot[]=[];particles:Particle[]=[];drops:Drop[]=[];numbers:TextFX[]=[];
   id=0;wave=0;checkpoint=0;beastForm:Beast=0;weapon=0;weaponLevels=[1,1,1,1,1,1,1,1];waveTimer=1.8;
   stage=0;gate=0;bossDefeated=false;high=0;screenW=W;screenH=H;
   announce="THE CURSED ROAD AWAITS";annT=4;audio:AudioContext|null=null;muted=false;
@@ -64,10 +65,11 @@ export class ArenaEngine {
   tell(s:string,t=2.6){this.announce=s;this.annT=t}
   seedStage(){
     this.crates=[];for(let i=0;i<29;i++)this.crates.push({x:260+i*194+rng(-35,35),y:330+(i%4)*44,hp:i%5===0?7:3,gold:i%5===0,secret:i%7===0,alive:true});
+    this.targets=[];for(let k=0;k<9;k++)this.targets.push({id:k,x:500+k*610,y:342+(k%3)*56,alive:true,glow:k*.4});
   }
   newGame(){
     this.state="play";this.player={x:100,y:410,hp:160,maxHp:160,energy:60,ammo:240,shield:0,beastTime:0,face:1,z:0,vz:0,inv:0,attack:0,attackId:0,attackChain:0,shoot:0,dash:0,special:0,stagger:0};
-    this.wave=0;this.gate=0;this.checkpoint=0;this.bossDefeated=false;this.score=0;this.kills=0;this.combo=0;
+    this.wave=0;this.gate=0;this.checkpoint=0;this.stage=0;this.bossDefeated=false;this.score=0;this.kills=0;this.combo=0;
     this.enemies=[];this.shots=[];this.drops=[];this.particles=[];this.numbers=[];this.seedStage();this.waveTimer=1.1;this.cam=0;this.weapon=0;this.weaponLevels.fill(1);this.tell("CHAPTER I: THE SHATTERED ROAD");this.sound(400,.24);
   }
   spawn(kind:EnemyKind,x:number,y:number){
@@ -152,6 +154,7 @@ export class ArenaEngine {
     this.burst(p.x,p.y-40,beast?COLOR[this.beastForm]:"#66efff",75,290);this.shake=18;
     for(const e of this.enemies)if(e.alive&&distance(p,e)<radius)this.hitEnemy(e,beast?140:45,68);
     for(const c of this.crates)if(c.alive&&distance(p,c)<radius)this.hitCrate(c,8);
+    for(const t of this.targets)if(t.alive&&distance(p,t)<radius){t.alive=false;this.drop(t.x,t.y,"shield");this.score+=550}
     this.tell(beast?["HELLFIRE NOVA!","SKYFALL TEMPEST!","LUNAR RAMPAGE!","TITAN CATACLYSM!"][this.beastForm]!:"ARCANE SHOCKWAVE!",2.2);
     this.sound(65,.45,"sawtooth",.06);
   }
@@ -182,9 +185,9 @@ export class ArenaEngine {
     if(this.state!=="play")return;
     const p=this.player;
     if(I.pressed("nextWeapon")){this.weapon=(this.weapon+1)%8;this.tell(GUNS[this.weapon]+" LV"+this.weaponLevels[this.weapon],1.5);this.sound(440,.06,"triangle")}
+    if(I.pressed("nextBeast")&&p.beastTime<=0){this.beastForm=((this.beastForm+1)%4) as Beast;this.tell("SELECTED: "+FORMS[this.beastForm],1.9);this.sound(550,.09,"sine")}
     if(I.pressed("restart")){this.newGame();return}
     if(I.pressed("transform")&&p.energy>=40&&p.beastTime<=0){p.energy-=40;p.beastTime=25;p.inv=1.5;this.shake=19;this.burst(p.x,p.y-50,COLOR[this.beastForm],85,310);this.tell(FORMS[this.beastForm]+" AWAKENS!",3);this.sound(64,.75)}
-    if(I.pressed("up")&&I.down("special")&&p.beastTime<=0){this.beastForm=((this.beastForm+1)%4) as Beast}
     if(I.pressed("melee"))this.attack();
     if(I.down("shoot"))this.fire();
     if(I.pressed("special"))this.special();
@@ -236,6 +239,13 @@ export class ArenaEngine {
           break;
         }
         for(const c of this.crates)if(c.alive&&Math.hypot(c.x-b.x,c.y-25-b.y)<27+b.radius){this.hitCrate(c,b.dmg/5);b.life=0;break}
+        for(const t of this.targets)if(t.alive&&Math.hypot(t.x-b.x,t.y-49-b.y)<27+b.radius){
+          t.alive=false;b.life=0;this.score+=550;
+          this.drop(t.x,t.y,t.id%3===0?"shield":t.id%3===1?"weapon":"fury");
+          this.burst(t.x,t.y-49,"#9bf7ff",31,175);this.float(t.x,t.y-105,"PRECISION BONUS!","#fff5ab");
+          this.tell("RUNE TARGET DESTROYED — BONUS REWARD!",2.4);this.sound(720,.25,"sine");
+          break;
+        }
       }else if(Math.hypot(p.x-b.x,p.y-p.z-38-b.y)<28+b.radius){this.hurt(b.dmg,b.x);b.life=0}
       if(Math.random()<.3)this.particles.push({x:b.x,y:b.y,vx:rng(-10,10),vy:rng(-12,12),life:.19,max:.19,size:b.kind>=8?5:2,color:b.kind>=8?COLOR[this.beastForm]:"#fff2a5"});
     }
