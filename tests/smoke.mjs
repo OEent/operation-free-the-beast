@@ -34,6 +34,7 @@ await page.waitForTimeout(850);
 await page.keyboard.up("KeyK");
 await page.keyboard.up("ArrowRight");
 await page.keyboard.up("ArrowDown");
+await page.screenshot({path:"smoke-hero-action.png"});
 await page.keyboard.press("KeyB");
 await page.keyboard.press("KeyE");
 await page.keyboard.press("KeyJ");
