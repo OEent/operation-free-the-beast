@@ -2,11 +2,16 @@ import { ArenaEngine as Engine } from "./arena";
 import { loadSettings } from "./storage";
 import type { Action } from "./input";
 import { installBeastArtPicker, restoreBeastArt } from "./art-import";
+import { restoreHeroArt, installHeroArtPicker } from "./hero-sprites";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const engine = new Engine(canvas, { standalone: true, settings: loadSettings() });
 engine.start();
 restoreBeastArt();
+restoreHeroArt();
+const heroPicker=installHeroArtPicker();
+const heroPickerVisibility=()=>{heroPicker.show(engine.state==="menu"||engine.state==="pause");requestAnimationFrame(heroPickerVisibility)};
+heroPickerVisibility();
 installBeastArtPicker(()=>engine.state==="menu"||engine.state==="pause");
 
 // No paid plugin / SDK required: pointer controls work in Android / iOS WebViews

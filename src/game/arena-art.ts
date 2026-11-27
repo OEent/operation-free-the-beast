@@ -1,4 +1,5 @@
 import { beasts } from "./beast-illustrations";
+import { heroSprite, getHeroFrame } from "./hero-sprites";
 import type { ArenaEngine } from "./arena";
 
 type G=CanvasRenderingContext2D;
@@ -153,6 +154,50 @@ function armoredLimb(g:G, x:number, y:number, angle:number, leg:boolean, glowing
  }
  g.restore();
 }
+// Actual artwork asset renderer: preserves the illustrated character's anatomy,
+// rather than drawing a body out of geometric limbs. Uses gameplay-specific poses.
+function illustratedWarrior(g:G,e:ArenaEngine,time:number) {
+ const p=e.player;
+ const running=e.motion>.14,dashing=p.dash>0,air=p.z>8,attacking=p.attack>0,shooting=p.shoot>0;
+ const frame=getHeroFrame({running,dashing,air,attacking,shooting,attack:p.attack,time});
+ const scale=1.75, drawW=108*scale, drawH=108*scale;
+ // Prevent the old bouncy 'toddle' animation. Baseline remains grounded.
+ const bob=running?Math.sin(e.gait*2)*.35:Math.sin(time*2)*.23;
+ g.save();g.translate(0,bob);
+ if(dashing)g.rotate(-.065);
+ if(air)g.rotate(-.035);
+ // Each artwork frame is a complete character silhouette; no detached body parts.
+ if(frame.source&&frame.source.complete&&frame.source.naturalWidth>0) {
+   g.imageSmoothingEnabled=true;g.imageSmoothingQuality="high";
+   if(frame.rect){
+     const r=frame.rect;
+     g.drawImage(frame.source,r.x,r.y,r.w,r.h,-drawW*.51,-drawH*.93,drawW,drawH);
+   }else{
+     g.drawImage(frame.source,-drawW*.51,-drawH*.93,drawW,drawH);
+   }
+ } else if(heroSprite.complete&&heroSprite.naturalWidth>0) {
+   g.drawImage(heroSprite,-drawW*.51,-drawH*.93,drawW,drawH);
+ }
+ if(shooting){
+    const muzzleX=drawW*.37,muzzleY=-drawH*.53;
+    glow(g,muzzleX,muzzleY,36,"#ffe89b",.55);
+    line(g,[muzzleX,muzzleY,muzzleX+37,muzzleY-4],"#ffdc74",4);
+ }
+ if(attacking){
+   const alpha=Math.max(0,Math.min(1,p.attack/.37));
+   const a=-1.55+(1-alpha)*2.45;
+   g.save();g.globalCompositeOperation="screen";
+   for(let k=0;k<3;k++){
+     g.strokeStyle=["#38bfff","#9eefff","#f3ffff"][k]!;
+     g.lineWidth=10-k*3;g.globalAlpha=.65-k*.16;
+     g.beginPath();g.arc(15,-drawH*.49,91+k*7,a-.22,a+.45);g.stroke();
+   }g.restore();
+ }
+ if(dashing){
+   glow(g,-44,-drawH*.48,35,"#62eaff",.25);
+ }
+ g.restore();
+}
 function warrior(g:G,e:ArenaEngine,time:number) {
  const p=e.player,beast=p.beastTime>0;
  const moving=e.motion>0.1, gait=e.gait, stride=Math.sin(gait), back=Math.cos(gait);
@@ -179,6 +224,9 @@ function warrior(g:G,e:ArenaEngine,time:number) {
  }
  if(beast){
    beastDraw(g,e,time);g.restore();return;
+ }
+ if(heroSprite.complete&&heroSprite.naturalWidth>0){
+   illustratedWarrior(g,e,time);g.restore();return;
  }
  const jumpLean=air?-.2:0, attackLean=swinging?.13:0;
  const leaning=dash?-.4:jumpLean+attackLean+(moving?.06:0);
