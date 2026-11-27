@@ -204,4 +204,17 @@ if(!analogOffset.includes("calc(")||resetOffset!=="translate(-50%, -50%)"&&reset
 if(errors.length)throw Error("Mobile runtime error(s): "+errors.join(" | "));
 console.log("PASS — analog joystick mobile touch drag and automatic centering",analogOffset);
 await mobilePage.close();
+// The default in-game playable hero must be a decoded, real illustration.
+const realHero=await page.evaluate(async()=>{
+ const {heroSprite}=await import("/src/game/hero-sprites.ts");
+ await heroSprite.decode();
+ const cv=document.createElement("canvas");cv.width=160;cv.height=160;
+ const g=cv.getContext("2d");if(!g)throw Error("Canvas missing");
+ g.drawImage(heroSprite,0,0,160,160);
+ const pixels=g.getImageData(0,0,160,160).data;
+ let filled=0;for(let i=3;i<pixels.length;i+=4)if(pixels[i]>50)filled++;
+ return {width:heroSprite.naturalWidth,height:heroSprite.naturalHeight,filled};
+});
+if(realHero.filled<1000||realHero.width<50)throw Error("Illustrated hero asset did not load: "+JSON.stringify(realHero));
+console.log("PASS — actual illustrated hero image decoded and rendered in gameplay pipeline",realHero);
 await browser.close();

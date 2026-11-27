@@ -1,7 +1,7 @@
 name: Validate IRONFANG v3 engine
 on:
   push:
-    branches: [feature/ironfang-v3-belt-scroller, feature/ironfang-v31-exploration-art, feature/ironfang-v32-animated-gameplay, feature/mobile-analog-and-art-v33, main]
+    branches: [feature/ironfang-v3-belt-scroller, feature/ironfang-v31-exploration-art, feature/ironfang-v32-animated-gameplay, feature/mobile-analog-and-art-v33, feature/hero-actual-art-in-game, main]
     paths:
       - 'src/game/**'
       - 'tsconfig.arena.json'
