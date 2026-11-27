@@ -153,7 +153,7 @@ const customArtPanel=mobilePage.getByLabel("HD Beast Art importer");
 await customArtPanel.waitFor();
 if(!await customArtPanel.isVisible())throw Error("Art import menu missing");
 const png=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==","base64");
-await mobilePage.locator('input[type="file"]').setInputFiles({name:"storm_drake.png",mimeType:"image/png",buffer:png});
+await mobilePage.locator('input[type="file"][multiple]').setInputFiles({name:"storm_drake.png",mimeType:"image/png",buffer:png});
 await mobilePage.waitForTimeout(200);
 const saved=await mobilePage.evaluate(()=>new Promise((resolve,reject)=>{
  const req=indexedDB.open("ironfang-art-assets-v1");
@@ -169,7 +169,7 @@ const zip=zipSync({
  "moonfang_werebeast.png":new Uint8Array(png),
  "arcane_titan.png":new Uint8Array(png)
 });
-await mobilePage.locator('input[type="file"]').setInputFiles({name:"ironfang_beasts.zip",mimeType:"application/zip",buffer:Buffer.from(zip)});
+await mobilePage.locator('input[type="file"][multiple]').setInputFiles({name:"ironfang_beasts.zip",mimeType:"application/zip",buffer:Buffer.from(zip)});
 await mobilePage.waitForTimeout(250);
 const importedCount=await mobilePage.evaluate(()=>new Promise((resolve,reject)=>{
  const open=indexedDB.open("ironfang-art-assets-v1");
