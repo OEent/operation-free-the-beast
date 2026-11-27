@@ -2,11 +2,20 @@
 // Optional high-definition 4x4/8-frame sprite atlases can be imported in the game.
 export const heroSprite = new Image();
 heroSprite.src=new URL("./assets/hero-idle.webp",import.meta.url).href;
+export const heroRunSprite = new Image();
+heroRunSprite.src=new URL("./assets/hero-run.webp",import.meta.url).href;
+export const heroSlashSprite = new Image();
+heroSlashSprite.src=new URL("./assets/hero-slash.webp",import.meta.url).href;
+
 let customSheet:HTMLImageElement|null=null;
 const DB="ironfang-hero-sprite-v1",STORE="hero";
 type Pose={running:boolean;dashing:boolean;air:boolean;attacking:boolean;shooting:boolean;attack:number;time:number};
 export function getHeroFrame(p:Pose):{source:HTMLImageElement|null;rect?:{x:number;y:number;w:number;h:number}} {
- if(!customSheet?.complete||!customSheet.naturalWidth)return {source:heroSprite};
+ if(!customSheet?.complete||!customSheet.naturalWidth){
+  if(p.attacking&&heroSlashSprite.complete&&heroSlashSprite.naturalWidth)return {source:heroSlashSprite};
+  if((p.running||p.dashing||p.air)&&heroRunSprite.complete&&heroRunSprite.naturalWidth)return {source:heroRunSprite};
+  return {source:heroSprite};
+ }
  // User-created original atlas is a 4-column x 4-row sheet of consistent poses:
  // row 1 idle/walk, row 2 run, row 3 melee, row 4 gun/dash/transform.
  const frames=customSheet.naturalWidth/customSheet.naturalHeight;

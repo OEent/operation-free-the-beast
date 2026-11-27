@@ -160,9 +160,9 @@ function illustratedWarrior(g:G,e:ArenaEngine,time:number) {
  const p=e.player;
  const running=e.motion>.14,dashing=p.dash>0,air=p.z>8,attacking=p.attack>0,shooting=p.shoot>0;
  const frame=getHeroFrame({running,dashing,air,attacking,shooting,attack:p.attack,time});
- const scale=1.75, drawW=108*scale, drawH=108*scale;
+ const drawW=150, drawH=150;
  // Prevent the old bouncy 'toddle' animation. Baseline remains grounded.
- const bob=running?Math.sin(e.gait*2)*.35:Math.sin(time*2)*.23;
+ const bob=running?Math.sin(e.gait*2)*.22:Math.sin(time*2)*.12;
  g.save();g.translate(0,bob);
  if(dashing)g.rotate(-.065);
  if(air)g.rotate(-.035);
@@ -189,7 +189,7 @@ function illustratedWarrior(g:G,e:ArenaEngine,time:number) {
    g.save();g.globalCompositeOperation="screen";
    for(let k=0;k<3;k++){
      g.strokeStyle=["#38bfff","#9eefff","#f3ffff"][k]!;
-     g.lineWidth=10-k*3;g.globalAlpha=.65-k*.16;
+     g.lineWidth=8-k*2;g.globalAlpha=.43-k*.11;
      g.beginPath();g.arc(15,-drawH*.49,91+k*7,a-.22,a+.45);g.stroke();
    }g.restore();
  }
